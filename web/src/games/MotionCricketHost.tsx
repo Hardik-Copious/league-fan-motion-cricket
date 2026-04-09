@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import type { Session } from "@supabase/supabase-js";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { QRCodeSVG } from "qrcode.react";
@@ -129,6 +129,8 @@ async function requestCameraStream(constraints: MediaStreamConstraints): Promise
 }
 
 export default function MotionCricketHost({ session }: { session: Session | null }) {
+  const [params] = useSearchParams();
+  const matchFromQuery = params.get("match")?.trim().toUpperCase() ?? "";
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const detectorRef = useRef<Awaited<ReturnType<typeof poseDetection.createDetector>> | null>(null);
@@ -159,11 +161,14 @@ export default function MotionCricketHost({ session }: { session: Session | null
   });
   const batNowRef = useRef<{ wristX: number; wristY: number; tipX: number; tipY: number } | null>(null);
 
-  const [hostId] = useState<string>(() =>
-    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-      ? crypto.randomUUID()
-      : `host-${Math.random().toString(36).slice(2, 10)}`
+  const [generatedHostId] = useState<string>(() =>
+    (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID().replace(/-/g, "")
+      : `host${Math.random().toString(36).slice(2, 14)}`)
+      .slice(0, 8)
+      .toUpperCase()
   );
+  const hostId = matchFromQuery || generatedHostId;
   const [phase, setPhase] = useState<"idle" | "loading" | "ready" | "playing" | "done">("idle");
   const [poseError, setPoseError] = useState<string | null>(null);
   const [batConnected, setBatConnected] = useState(false);
@@ -854,12 +859,6 @@ export default function MotionCricketHost({ session }: { session: Session | null
     broadcast({ type: "score_sync", runs: 0, wickets: 0, balls: 0 });
   }
 
-  const disconnectBat = useCallback(() => {
-    broadcast({ type: "host_disconnected", reason: "Disconnected by stadium host." });
-    setBatConnected(false);
-    setFeedback("Bat disconnected.");
-  }, [broadcast]);
-
   async function submitScore() {
     setSubmitErr(null);
     setSubmitMsg(null);
@@ -888,13 +887,14 @@ export default function MotionCricketHost({ session }: { session: Session | null
         Stadium mode: phone sends <strong>Next Ball</strong>. A hit is auto-detected when your pose-driven bat overlaps
         the ball. Press <kbd className="kbd-inline">N</kbd> for next ball.
       </p>
+      <p className="muted small">
+        Match ID: <strong>{hostId}</strong>. Join from <Link to="/games/match">Match Lobby</Link> on both devices.
+      </p>
 
       <div className="card motion-cricket-pair">
           <h2 className="motion-cricket-pair-title">Phone as bat</h2>
           <p className="muted">
-            Pair in either way:
-            <strong> (1)</strong> open Bat screen and paste Host ID manually, or
-            <strong> (2)</strong> open the prefilled Bat link below.
+            Open Bat from Match Lobby with this same Match ID, or use the quick prefilled link below.
           </p>
           {lanDiscovery === "scanning" && <p className="muted small">Detecting your LAN address…</p>}
           {lanDiscovery === "fallback" && (
@@ -916,9 +916,6 @@ export default function MotionCricketHost({ session }: { session: Session | null
             Host ID: <strong>{hostId}</strong>{" "}
             {batConnected ? <span className="badge live">Bat connected</span> : <span className="muted">Waiting…</span>}
           </p>
-          <button type="button" className="btn" disabled={!batConnected} onClick={disconnectBat}>
-            Disconnect bat
-          </button>
         </div>
 
       {phase === "idle" && (

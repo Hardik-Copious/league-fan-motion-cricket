@@ -94,17 +94,13 @@ export default function Games({ session }: { session: Session | null }) {
       <div className="card card-textured">
         <h2>Motion cricket (CricFit-style)</h2>
         <p className="muted">
-          <strong>Stadium:</strong> open on laptop to get Host ID. <strong>Bat:</strong> open on phone, paste Host ID,
-          then tap Connect.
+          Start or join with a shared <strong>Match ID</strong>. Choose role (Laptop/Phone), enter the same ID, and play.
         </p>
         <div className="games-actions">
-          <Link to="/games/motion" className="btn primary">
-            Open stadium (laptop)
+          <Link to="/games/match" className="btn primary">
+            Start or Join Match
           </Link>
-          <Link to="/games/bat" className="btn">
-            Open bat (phone)
-          </Link>
-          <span className="muted">Pair using Host ID, with manual connect/disconnect controls.</span>
+          <span className="muted">No manual connect step in-game; lobby handles match-role entry.</span>
         </div>
       </div>
 

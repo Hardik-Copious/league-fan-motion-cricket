@@ -8,7 +8,7 @@ import { supabase } from "../supabaseClient";
 export default function MotionCricketBat() {
   const [params] = useSearchParams();
   const hostFromQuery = params.get("host")?.trim() ?? "";
-  const [hostId, setHostId] = useState(hostFromQuery);
+  const [hostId, setHostId] = useState(hostFromQuery.toUpperCase());
   const [peerReady] = useState(true);
   const [connStatus, setConnStatus] = useState<"idle" | "connecting" | "open" | "error">("idle");
   const [motionOn, setMotionOn] = useState(false);
@@ -189,37 +189,19 @@ export default function MotionCricketBat() {
       <p className="muted">
         Tap <strong>Next Ball</strong> to deliver. Bat contact is auto-detected from your live pose on laptop.
       </p>
-      {!!hostFromQuery && (
-        <p className="muted small">Host ID detected from shared link. Tap <strong>Connect</strong> to pair.</p>
-      )}
+      {!hostFromQuery && <p className="error">No Match ID found. Join from <Link to="/games/match">Match Lobby</Link>.</p>}
+      {!!hostFromQuery && <p className="muted small">Match ID: <strong>{hostId}</strong></p>}
 
       <div className="card">
-        <label htmlFor="hostid">Stadium Host ID (from laptop)</label>
-        <input
-          id="hostid"
-          className="motion-cricket-input"
-          value={hostId}
-          onChange={(e) => setHostId(e.target.value.trim())}
-          placeholder="Paste host ID"
-          autoComplete="off"
-        />
-        <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.6rem", flexWrap: "wrap" }}>
-          <button
-            type="button"
-            className="btn primary"
-            onClick={connectToHost}
-            disabled={!peerReady || connStatus === "connecting" || connStatus === "open"}
-          >
-            {connStatus === "connecting" ? "Connecting..." : "Connect"}
-          </button>
-          <button type="button" className="btn" onClick={disconnectFromHost} disabled={connStatus !== "open"}>
-            Disconnect
-          </button>
-        </div>
         <p className="muted small">
-          Status: {connStatus} {peerReady ? "" : "(starting…)"}
+          Connection status: {connStatus} {peerReady ? "" : "(starting…)"}
         </p>
-        {connStatus === "error" && <p className="error">Could not connect. Check ID and try again.</p>}
+        {connStatus === "error" && <p className="error">Could not connect this Match ID. Rejoin from Match Lobby.</p>}
+        {connStatus === "open" && (
+          <button type="button" className="btn" onClick={disconnectFromHost}>
+            Leave match
+          </button>
+        )}
       </div>
 
       <div className="card">

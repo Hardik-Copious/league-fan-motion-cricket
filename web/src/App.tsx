@@ -14,6 +14,7 @@ import Auth from "./pages/Auth";
 import Stats from "./pages/Stats";
 import Players from "./pages/Players";
 import PlayerDetail from "./pages/PlayerDetail";
+import MotionMatchLobby from "./pages/MotionMatchLobby";
 const MotionCricketHost = lazy(() => import("./games/MotionCricketHost"));
 const MotionCricketBat = lazy(() => import("./games/MotionCricketBat"));
 
@@ -103,6 +104,7 @@ function App() {
         <Route path="/players" element={<Players />} />
         <Route path="/profile" element={<Profile session={session} />} />
         <Route path="/games" element={<Games session={session} />} />
+        <Route path="/games/match" element={<MotionMatchLobby />} />
         <Route path="/games/motion" element={<MotionCricketHost session={session} />} />
         <Route path="/games/bat" element={<MotionCricketBat />} />
         <Route path="/auth" element={<Auth />} />
