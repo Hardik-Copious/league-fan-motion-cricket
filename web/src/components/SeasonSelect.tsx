@@ -1,4 +1,5 @@
 import type { Season } from "../types";
+import { normalizeLeagueLabel } from "../leagueBrand";
 
 type Props = {
   seasons: Season[];
@@ -14,7 +15,7 @@ export default function SeasonSelect({ seasons, value, onChange, label = "Season
       <select className="season-select-input" value={value} onChange={(e) => onChange(e.target.value)}>
         {seasons.map((s) => (
           <option key={s.id} value={s.id}>
-            {s.label} ({s.year})
+            {normalizeLeagueLabel(s.label)} ({s.year})
           </option>
         ))}
       </select>

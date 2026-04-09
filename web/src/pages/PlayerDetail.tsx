@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import SeasonSelect from "../components/SeasonSelect";
-import { getPlayerBatInfo } from "../data/playerBat";
+import { getPlayerEquipmentInfo } from "../data/playerBat";
+import { normalizeLeagueLabel } from "../leagueBrand";
 import { playerNameToSlug } from "../playerSlug";
 import { supabase } from "../supabaseClient";
 import { DEFAULT_SEASON } from "../season";
@@ -109,7 +110,7 @@ export default function PlayerDetail() {
 
   const seasonMeta = useMemo(() => seasons.find((s) => s.id === (resolvedSeason ?? season)), [seasons, resolvedSeason, season]);
 
-  const batInfo = playerSlug ? getPlayerBatInfo(playerSlug) : null;
+  const equipmentInfo = playerSlug ? getPlayerEquipmentInfo(playerSlug) : null;
 
   if (!teamId || !playerSlug) {
     return <p className="muted">Invalid player URL.</p>;
@@ -130,7 +131,9 @@ export default function PlayerDetail() {
         </Link>
         <header className="page-header">
           <h1>Player not found</h1>
-          <p className="muted">No leaderboard entry for this name and team in {seasonMeta?.label ?? resolvedSeason}.</p>
+          <p className="muted">
+            No leaderboard entry for this name and team in {normalizeLeagueLabel(seasonMeta?.label ?? resolvedSeason)}.
+          </p>
         </header>
         <p className="muted">
           <Link to={`/players?season=${resolvedSeason}`}>Back to players</Link>
@@ -155,7 +158,7 @@ export default function PlayerDetail() {
       >
         <div className="team-hero-strip" style={{ background: team.primary_color }} />
         <div className="team-hero-inner">
-          <span className="team-hero-code">{seasonMeta?.label ?? resolvedSeason}</span>
+          <span className="team-hero-code">{normalizeLeagueLabel(seasonMeta?.label ?? resolvedSeason)}</span>
           <h1>{playerName}</h1>
           <p className="muted">
             <Link to={`/teams/${team.id}`} className="player-detail-team-link">
@@ -167,16 +170,32 @@ export default function PlayerDetail() {
         </div>
       </header>
 
-      {batInfo && (
-        <div className="card player-bat-card card-textured" style={{ marginTop: "1rem" }}>
-          <h2 className="stats-panel-title">Bat profile</h2>
-          <p className="player-detail-stat-main">{batInfo.batName}</p>
-          <p className="muted">{batInfo.batDetail}</p>
-          <p style={{ marginTop: "0.75rem" }}>
-            <Link to="/book" className="btn primary">
-              Book match tickets
-            </Link>
-          </p>
+      {equipmentInfo && (
+        <div className="player-gear-grid">
+          <section className="card player-gear-card player-gear-card--bat card-textured">
+            <h2 className="stats-panel-title">Bat</h2>
+            <p className="player-detail-stat-main">{equipmentInfo.batName}</p>
+            <p className="muted">{equipmentInfo.batDetail}</p>
+          </section>
+          <section className="card player-gear-card player-gear-card--helmet card-textured">
+            <h2 className="stats-panel-title">Helmet</h2>
+            <p className="player-detail-stat-main">{equipmentInfo.helmetName}</p>
+            <p className="muted">{equipmentInfo.helmetDetail}</p>
+          </section>
+          <section className="card player-gear-card player-gear-card--ads card-textured">
+            <h2 className="stats-panel-title">Ads / Sponsor</h2>
+            <p className="player-detail-stat-main">{equipmentInfo.sponsorName}</p>
+            <p className="muted">{equipmentInfo.sponsorDetail}</p>
+          </section>
+          <section className="card player-gear-card player-gear-card--tickets card-textured">
+            <h2 className="stats-panel-title">Match tickets</h2>
+            <p className="muted">{equipmentInfo.ticketNote}</p>
+            <p style={{ marginTop: "0.75rem" }}>
+              <Link to="/book" className="btn primary">
+                Book tickets for this player
+              </Link>
+            </p>
+          </section>
         </div>
       )}
 

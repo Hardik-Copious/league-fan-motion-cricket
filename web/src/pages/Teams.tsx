@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import PageBanner from "../components/PageBanner";
+import { getTeamMerch } from "../data/teamMerch";
 import { supabase } from "../supabaseClient";
 import type { Team } from "../types";
 
@@ -35,6 +36,20 @@ export default function Teams() {
             <strong className="team-tile-name">{t.name}</strong>
             <span className="muted team-tile-city">{t.city ?? t.home_venue}</span>
             {t.blurb && <p className="team-tile-blurb">{t.blurb.split(".")[0]}.</p>}
+            <div className="team-merch-ad" style={{ borderColor: `${t.primary_color}55` }}>
+              {(() => {
+                const merch = getTeamMerch(t.id, t.short_code);
+                return (
+                  <>
+                    <p className="team-merch-title">Merch ad · Player shirt</p>
+                    <p className="team-merch-name">{merch.shirtName}</p>
+                    <p className="team-merch-meta">
+                      {merch.featuredPlayer} · from ₹{merch.shirtPriceInr.toLocaleString("en-IN")}
+                    </p>
+                  </>
+                );
+              })()}
+            </div>
           </Link>
         ))}
       </div>

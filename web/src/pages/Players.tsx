@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import PageBanner from "../components/PageBanner";
 import SeasonSelect from "../components/SeasonSelect";
+import { normalizeLeagueLabel } from "../leagueBrand";
 import { supabase } from "../supabaseClient";
 import { playerDetailPath } from "../playerSlug";
 import { DEFAULT_SEASON, useSeasonQuery } from "../season";
@@ -74,7 +75,9 @@ export default function Players() {
       <header className="page-header page-header-row">
         <div>
           <h1>Players</h1>
-          <p className="muted">Featured squad members from the leaderboards — {seasonMeta?.label ?? season}.</p>
+          <p className="muted">
+            Featured squad members from the leaderboards — {normalizeLeagueLabel(seasonMeta?.label ?? season)}.
+          </p>
         </div>
         {seasons.length > 0 && <SeasonSelect seasons={seasons} value={season} onChange={setSeason} />}
       </header>

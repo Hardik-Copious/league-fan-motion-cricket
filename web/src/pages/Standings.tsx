@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import PageBanner from "../components/PageBanner";
 import SeasonSelect from "../components/SeasonSelect";
+import { normalizeLeagueLabel } from "../leagueBrand";
 import { supabase } from "../supabaseClient";
 import { DEFAULT_SEASON, useSeasonQuery } from "../season";
 import type { Season, Standing, Team } from "../types";
@@ -54,7 +55,9 @@ export default function Standings() {
         <div>
           <h1>Points table</h1>
           <p className="muted">
-            {isCurrent ? `Top ${PLAYOFF_SPOTS} in the playoff zone (demo).` : `Final / archived table for ${seasonMeta?.label ?? season}.`}
+            {isCurrent
+              ? `Top ${PLAYOFF_SPOTS} in the Hogwarts Premier League playoff zone.`
+              : `Final / archived table for ${normalizeLeagueLabel(seasonMeta?.label ?? season)}.`}
           </p>
         </div>
         {seasons.length > 0 && <SeasonSelect seasons={seasons} value={season} onChange={setSeason} />}

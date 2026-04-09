@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import MatchCard from "../components/MatchCard";
 import PageBanner from "../components/PageBanner";
 import SeasonSelect from "../components/SeasonSelect";
+import { normalizeLeagueLabel } from "../leagueBrand";
 import { supabase } from "../supabaseClient";
 import { DEFAULT_SEASON, useSeasonQuery } from "../season";
 import type { MatchRow, Season, Team } from "../types";
@@ -94,7 +95,7 @@ export default function Matches() {
       {filtered.length === 0 && <p className="muted">No matches in this filter.</p>}
 
       <p className="muted archive-hint">
-        Browsing <strong>{seasonMeta?.label ?? season}</strong>.{" "}
+        Browsing <strong>{normalizeLeagueLabel(seasonMeta?.label ?? season)}</strong>.{" "}
         <Link to={`/standings?season=${season}`}>See points table</Link> ·{" "}
         <Link to={`/stats?season=${season}`}>Season stats</Link>
       </p>

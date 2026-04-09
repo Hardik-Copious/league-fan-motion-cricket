@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import MatchCard from "../components/MatchCard";
+import { getTeamMerch } from "../data/teamMerch";
+import { normalizeLeagueLabel } from "../leagueBrand";
 import { supabase } from "../supabaseClient";
 import type { MatchRow, Season, Team } from "../types";
 
@@ -51,6 +53,7 @@ export default function TeamDetail() {
 
   if (error) return <p className="error">{error}</p>;
   if (!team) return <p className="muted">Loading…</p>;
+  const merch = getTeamMerch(team.id, team.short_code);
 
   return (
     <>
@@ -76,6 +79,19 @@ export default function TeamDetail() {
       </header>
 
       {team.blurb && <p className="team-blurb">{team.blurb}</p>}
+      <div className="card team-merch-feature card-textured" style={{ borderLeftColor: team.primary_color }}>
+        <h2>Merchandise · Player shirt</h2>
+        <p className="player-detail-stat-main">{merch.shirtName}</p>
+        <p className="muted">
+          Featuring <strong>{merch.featuredPlayer}</strong> · ₹{merch.shirtPriceInr.toLocaleString("en-IN")}
+        </p>
+        <p className="muted">{merch.adLine}</p>
+        <p style={{ marginTop: "0.7rem" }}>
+          <Link to="/book" className="btn primary">
+            Shop merch & book tickets
+          </Link>
+        </p>
+      </div>
 
       {bySeason.map(([sid, list]) => {
         const meta = seasons[sid];
@@ -84,7 +100,7 @@ export default function TeamDetail() {
         if (upcoming.length === 0 && done.length === 0) return null;
         return (
           <section key={sid} className="section">
-            <h2 className="section-title">{meta?.label ?? `Season ${sid}`}</h2>
+            <h2 className="section-title">{normalizeLeagueLabel(meta?.label ?? `Season ${sid}`)}</h2>
             {upcoming.length > 0 && (
               <>
                 <h3 className="subsection-title">Upcoming & live</h3>

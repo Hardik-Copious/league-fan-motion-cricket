@@ -67,6 +67,7 @@ export default function Home({ session }: { session: Session | null }) {
         </div>
         <div className="hero-inner">
           <div className="hero-badge">Hogwarts Premier League · {DEFAULT_SEASON}</div>
+          <p className="hero-secondary-title">Willow &amp; Wickets</p>
           <h1 className="hero-title">Where every over tells a story</h1>
           <p className="hero-sub">
             T20 league — multi-season archive, live-style match centre, stats, and fan picks. A playful fan app inspired
