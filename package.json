@@ -1,0 +1,9 @@
+{
+  "name": "league-fan-app",
+  "private": true,
+  "scripts": {
+    "db:login": "npx supabase@latest login",
+    "db:link": "npx supabase@latest link --project-ref zmsfjhrazepuetbcnrco",
+    "db:push": "npx supabase@latest db push"
+  }
+}
