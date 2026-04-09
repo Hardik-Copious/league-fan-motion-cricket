@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import type { Session } from "@supabase/supabase-js";
 import type { RealtimeChannel } from "@supabase/supabase-js";
+import { QRCodeSVG } from "qrcode.react";
 import * as tf from "@tensorflow/tfjs";
 import "@tensorflow/tfjs-backend-webgl";
 import * as poseDetection from "@tensorflow-models/pose-detection";
@@ -902,6 +903,10 @@ export default function MotionCricketHost({ session }: { session: Session | null
             </p>
           )}
           <code className="motion-cricket-url">{batUrl}</code>
+          <div style={{ marginTop: "0.75rem", display: "inline-block", background: "#fff", padding: "10px", borderRadius: "10px" }}>
+            <QRCodeSVG value={batUrl} size={176} includeMargin />
+          </div>
+          <p className="muted small">Scan QR on phone to open Bat with prefilled Host ID.</p>
           <p style={{ marginTop: "0.6rem" }}>
             <a className="btn" href={batUrl} target="_blank" rel="noreferrer">
               Open bat with prefilled Host ID

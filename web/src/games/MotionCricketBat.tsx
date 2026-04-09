@@ -20,6 +20,7 @@ export default function MotionCricketBat() {
 
   const channelRef = useRef<RealtimeChannel | null>(null);
   const welcomeTimeoutRef = useRef<number | null>(null);
+  const autoConnectTriedRef = useRef(false);
 
   const sendToHost = useCallback((msg: BatToHostMessage) => {
     const ch = channelRef.current;
@@ -156,6 +157,14 @@ export default function MotionCricketBat() {
       }
     });
   }, [hostId, sendToHost]);
+
+  useEffect(() => {
+    if (autoConnectTriedRef.current) return;
+    if (!hostFromQuery) return;
+    if (connStatus !== "idle") return;
+    autoConnectTriedRef.current = true;
+    connectToHost();
+  }, [connStatus, connectToHost, hostFromQuery]);
 
   useEffect(() => {
     return () => {
