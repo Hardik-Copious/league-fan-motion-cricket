@@ -94,14 +94,17 @@ export default function Games({ session }: { session: Session | null }) {
       <div className="card card-textured">
         <h2>Motion cricket (CricFit-style)</h2>
         <p className="muted">
-          <strong>Stadium:</strong> open on laptop — camera + MoveNet skeleton. <strong>Bat:</strong> open the phone link
-          from the stadium screen (PeerJS connects the two).
+          <strong>Stadium:</strong> open on laptop to get Host ID. <strong>Bat:</strong> open on phone, paste Host ID,
+          then tap Connect.
         </p>
         <div className="games-actions">
           <Link to="/games/motion" className="btn primary">
             Open stadium (laptop)
           </Link>
-          <span className="muted">Phone pairs via URL shown on stadium after start.</span>
+          <Link to="/games/bat" className="btn">
+            Open bat (phone)
+          </Link>
+          <span className="muted">Pair using Host ID, with manual connect/disconnect controls.</span>
         </div>
       </div>
 

@@ -842,6 +842,13 @@ export default function MotionCricketHost({ session }: { session: Session | null
     broadcast({ type: "score_sync", runs: 0, wickets: 0, balls: 0 });
   }
 
+  const disconnectBat = useCallback(() => {
+    connRef.current?.close();
+    connRef.current = null;
+    setBatConnected(false);
+    setFeedback("Bat disconnected.");
+  }, []);
+
   async function submitScore() {
     setSubmitErr(null);
     setSubmitMsg(null);
@@ -874,7 +881,11 @@ export default function MotionCricketHost({ session }: { session: Session | null
       {peerId && (
         <div className="card motion-cricket-pair">
           <h2 className="motion-cricket-pair-title">Phone as bat</h2>
-          <p className="muted">Open this URL on your phone (same Wi‑Fi as this Mac):</p>
+          <p className="muted">
+            Pair in either way:
+            <strong> (1)</strong> open Bat screen and paste Host ID manually, or
+            <strong> (2)</strong> open the prefilled Bat link below.
+          </p>
           {lanDiscovery === "scanning" && <p className="muted small">Detecting your LAN address…</p>}
           {lanDiscovery === "fallback" && (
             <p className="error small">
@@ -882,10 +893,18 @@ export default function MotionCricketHost({ session }: { session: Session | null
             </p>
           )}
           <code className="motion-cricket-url">{batUrl}</code>
+          <p style={{ marginTop: "0.6rem" }}>
+            <a className="btn" href={batUrl} target="_blank" rel="noreferrer">
+              Open bat with prefilled Host ID
+            </a>
+          </p>
           <p className="muted small">
             PeerJS ID: <strong>{peerId}</strong>{" "}
             {batConnected ? <span className="badge live">Bat connected</span> : <span className="muted">Waiting…</span>}
           </p>
+          <button type="button" className="btn" disabled={!batConnected} onClick={disconnectBat}>
+            Disconnect bat
+          </button>
         </div>
       )}
 

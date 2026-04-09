@@ -59,16 +59,34 @@ export default function MotionCricketBat() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!peerReady || !hostId) {
-      if (!hostId) setConnStatus("idle");
+  const disconnectFromHost = useCallback(() => {
+    connRef.current?.close();
+    connRef.current = null;
+    setConnStatus("idle");
+    setDeliveryState("idle");
+    setLastAck("Disconnected");
+  }, []);
+
+  const connectToHost = useCallback(() => {
+    if (!peerReady) {
+      setConnStatus("error");
+      setLastAck("Peer not ready yet. Try again.");
       return;
     }
+    const trimmed = hostId.trim();
+    if (!trimmed) {
+      setConnStatus("error");
+      setLastAck("Enter a valid Host ID.");
+      return;
+    }
+    connRef.current?.close();
+    connRef.current = null;
     setConnStatus("connecting");
+
     const peer = peerRef.current;
     if (!peer) return;
 
-    const conn = peer.connect(hostId, { reliable: true });
+    const conn = peer.connect(trimmed, { reliable: true });
     connRef.current = conn;
 
     conn.on("open", () => {
@@ -100,11 +118,7 @@ export default function MotionCricketBat() {
       connRef.current = null;
     });
     conn.on("error", () => setConnStatus("error"));
-
-    return () => {
-      conn.close();
-    };
-  }, [peerReady, hostId]);
+  }, [hostId, peerReady]);
 
   async function enableMotion() {
     setPermissionHint(null);
@@ -122,6 +136,9 @@ export default function MotionCricketBat() {
       <p className="muted">
         Tap <strong>Next Ball</strong> to deliver. Bat contact is auto-detected from your live pose on laptop.
       </p>
+      {!!hostFromQuery && (
+        <p className="muted small">Host ID detected from shared link. Tap <strong>Connect</strong> to pair.</p>
+      )}
 
       <div className="card">
         <label htmlFor="hostid">Stadium Peer ID (from laptop)</label>
@@ -133,6 +150,19 @@ export default function MotionCricketBat() {
           placeholder="Paste host ID"
           autoComplete="off"
         />
+        <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.6rem", flexWrap: "wrap" }}>
+          <button
+            type="button"
+            className="btn primary"
+            onClick={connectToHost}
+            disabled={!peerReady || connStatus === "connecting" || connStatus === "open"}
+          >
+            {connStatus === "connecting" ? "Connecting..." : "Connect"}
+          </button>
+          <button type="button" className="btn" onClick={disconnectFromHost} disabled={connStatus !== "open"}>
+            Disconnect
+          </button>
+        </div>
         <p className="muted small">
           Status: {connStatus} {peerReady ? "" : "(starting…)"}
         </p>
