@@ -5,7 +5,7 @@ export function originFromEnv(): string | null {
   return raw.replace(/\/$/, "");
 }
 
-const STATIC_PHONE_ORIGIN = "http://192.168.31.123:5173";
+const STATIC_PHONE_ORIGIN = "https://league-fan-motion-cricket.vercel.app";
 
 function isLocalhost(hostname: string): boolean {
   return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "[::1]";
