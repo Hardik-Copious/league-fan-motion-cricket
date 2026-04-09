@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import type { Session } from "@supabase/supabase-js";
-import Peer, { type DataConnection } from "peerjs";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import * as tf from "@tensorflow/tfjs";
 import "@tensorflow/tfjs-backend-webgl";
 import * as poseDetection from "@tensorflow-models/pose-detection";
@@ -132,7 +132,7 @@ export default function MotionCricketHost({ session }: { session: Session | null
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const detectorRef = useRef<Awaited<ReturnType<typeof poseDetection.createDetector>> | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const connRef = useRef<DataConnection | null>(null);
+  const channelRef = useRef<RealtimeChannel | null>(null);
   const rafRef = useRef<number>(0);
 
   const playingRef = useRef(false);
@@ -158,7 +158,11 @@ export default function MotionCricketHost({ session }: { session: Session | null
   });
   const batNowRef = useRef<{ wristX: number; wristY: number; tipX: number; tipY: number } | null>(null);
 
-  const [peerId, setPeerId] = useState<string | null>(null);
+  const [hostId] = useState<string>(() =>
+    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `host-${Math.random().toString(36).slice(2, 10)}`
+  );
   const [phase, setPhase] = useState<"idle" | "loading" | "ready" | "playing" | "done">("idle");
   const [poseError, setPoseError] = useState<string | null>(null);
   const [batConnected, setBatConnected] = useState(false);
@@ -200,11 +204,16 @@ export default function MotionCricketHost({ session }: { session: Session | null
     });
   }, []);
 
-  const batUrl = useMemo(() => (peerId ? `${phoneOrigin}/games/bat?host=${encodeURIComponent(peerId)}` : ""), [peerId, phoneOrigin]);
+  const batUrl = useMemo(() => `${phoneOrigin}/games/bat?host=${encodeURIComponent(hostId)}`, [hostId, phoneOrigin]);
 
   const broadcast = useCallback((msg: HostToBatMessage) => {
-    const conn = connRef.current;
-    if (conn?.open) conn.send(msg);
+    const ch = channelRef.current;
+    if (!ch) return;
+    void ch.send({
+      type: "broadcast",
+      event: "host_msg",
+      payload: msg,
+    });
   }, []);
 
   const finishBall = useCallback(
@@ -328,6 +337,14 @@ export default function MotionCricketHost({ session }: { session: Session | null
     (data: unknown) => {
       try {
         const msg = data as BatToHostMessage;
+        if (msg?.type === "join_request") {
+          setBatConnected(true);
+          broadcast({ type: "welcome", maxBalls: MAX_BALLS });
+          broadcast({ type: "score_sync", runs: runsRef.current, wickets: wicketsRef.current, balls: ballRef.current });
+        }
+        if (msg?.type === "disconnect_request") {
+          setBatConnected(false);
+        }
         if (msg?.type === "swing") applySwing(msg.peak, "bat");
         if (msg?.type === "start_innings") startInnings();
         if (msg?.type === "next_ball") startNextBall("bat");
@@ -335,35 +352,29 @@ export default function MotionCricketHost({ session }: { session: Session | null
         /* ignore */
       }
     },
-    [applySwing, startNextBall]
+    [applySwing, broadcast, startNextBall]
   );
 
   useEffect(() => {
-    const peer = new Peer();
-    peer.on("open", (id) => setPeerId(id));
-    peer.on("connection", (conn) => {
-      if (connRef.current?.open) {
-        conn.close();
-        return;
+    const channel = supabase.channel(`motion:${hostId}`);
+    channelRef.current = channel;
+    channel.on("broadcast", { event: "bat_msg" }, ({ payload }) => onData(payload));
+    void channel.subscribe((status) => {
+      if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+        setFeedback("Session channel error. Refresh stadium.");
       }
-      connRef.current = conn;
-      conn.on("open", () => {
-        setBatConnected(true);
-        conn.send({ type: "welcome", maxBalls: MAX_BALLS } satisfies HostToBatMessage);
-        conn.send({ type: "score_sync", runs: runsRef.current, wickets: wicketsRef.current, balls: ballRef.current } satisfies HostToBatMessage);
-      });
-      conn.on("data", onData);
-      conn.on("close", () => {
+      if (status === "CLOSED") {
         setBatConnected(false);
-        connRef.current = null;
-      });
+      }
     });
-    peer.on("error", (e) => console.error("PeerJS", e));
     return () => {
-      connRef.current?.close();
-      peer.destroy();
+      setBatConnected(false);
+      if (channelRef.current) {
+        void supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
-  }, [onData]);
+  }, [hostId, onData]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -843,11 +854,10 @@ export default function MotionCricketHost({ session }: { session: Session | null
   }
 
   const disconnectBat = useCallback(() => {
-    connRef.current?.close();
-    connRef.current = null;
+    broadcast({ type: "host_disconnected", reason: "Disconnected by stadium host." });
     setBatConnected(false);
     setFeedback("Bat disconnected.");
-  }, []);
+  }, [broadcast]);
 
   async function submitScore() {
     setSubmitErr(null);
@@ -878,8 +888,7 @@ export default function MotionCricketHost({ session }: { session: Session | null
         the ball. Press <kbd className="kbd-inline">N</kbd> for next ball.
       </p>
 
-      {peerId && (
-        <div className="card motion-cricket-pair">
+      <div className="card motion-cricket-pair">
           <h2 className="motion-cricket-pair-title">Phone as bat</h2>
           <p className="muted">
             Pair in either way:
@@ -899,14 +908,13 @@ export default function MotionCricketHost({ session }: { session: Session | null
             </a>
           </p>
           <p className="muted small">
-            PeerJS ID: <strong>{peerId}</strong>{" "}
+            Host ID: <strong>{hostId}</strong>{" "}
             {batConnected ? <span className="badge live">Bat connected</span> : <span className="muted">Waiting…</span>}
           </p>
           <button type="button" className="btn" disabled={!batConnected} onClick={disconnectBat}>
             Disconnect bat
           </button>
         </div>
-      )}
 
       {phase === "idle" && (
         <button type="button" className="btn primary" onClick={() => void startStadium()}>

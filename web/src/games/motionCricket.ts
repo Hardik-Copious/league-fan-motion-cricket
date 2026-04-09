@@ -1,5 +1,7 @@
 /** P2P messages: phone → laptop */
 export type BatToHostMessage =
+  | { type: "join_request"; t: number }
+  | { type: "disconnect_request"; t: number }
   | { type: "swing"; t: number; peak: number; mag: number }
   | { type: "start_innings"; t: number }
   | { type: "next_ball"; t: number }
@@ -8,6 +10,7 @@ export type BatToHostMessage =
 export type HostToBatMessage =
   | { type: "ack"; runsThisBall: number; totalRuns: number; ball: number; out: boolean }
   | { type: "welcome"; maxBalls: number }
+  | { type: "host_disconnected"; reason?: string }
   | { type: "ball_started"; ball: number; speed: number; etaMs: number }
   | { type: "ball_result"; ball: number; runs: number; outcome: "hit" | "miss" | "late" | "edge"; totalRuns: number; wickets: number }
   | { type: "score_sync"; runs: number; wickets: number; balls: number };

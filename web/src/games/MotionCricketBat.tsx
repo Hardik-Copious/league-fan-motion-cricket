@@ -1,45 +1,57 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import Peer, { type DataConnection } from "peerjs";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import { requestMotionPermission, useDeviceSwing } from "./useDeviceSwing";
-import type { HostToBatMessage } from "./motionCricket";
+import type { BatToHostMessage, HostToBatMessage } from "./motionCricket";
+import { supabase } from "../supabaseClient";
 
 export default function MotionCricketBat() {
   const [params] = useSearchParams();
   const hostFromQuery = params.get("host")?.trim() ?? "";
   const [hostId, setHostId] = useState(hostFromQuery);
-  const [peerReady, setPeerReady] = useState(false);
+  const [peerReady] = useState(true);
   const [connStatus, setConnStatus] = useState<"idle" | "connecting" | "open" | "error">("idle");
   const [motionOn, setMotionOn] = useState(false);
   const [permissionHint, setPermissionHint] = useState<string | null>(null);
   const [lastAck, setLastAck] = useState<string | null>(null);
   const [score, setScore] = useState({ runs: 0, wickets: 0, balls: 0 });
   const [deliveryState, setDeliveryState] = useState<"idle" | "incoming">("idle");
+  const isConnectedRef = useRef(false);
 
-  const peerRef = useRef<Peer | null>(null);
-  const connRef = useRef<DataConnection | null>(null);
+  const channelRef = useRef<RealtimeChannel | null>(null);
+  const welcomeTimeoutRef = useRef<number | null>(null);
 
-  const sendSwing = useCallback((peak: number, mag: number) => {
-    const conn = connRef.current;
-    if (!conn?.open) return;
-    conn.send({ type: "swing", t: Date.now(), peak, mag });
+  const sendToHost = useCallback((msg: BatToHostMessage) => {
+    const ch = channelRef.current;
+    if (!ch) return;
+    void ch.send({
+      type: "broadcast",
+      event: "bat_msg",
+      payload: msg,
+    });
   }, []);
+
+  const sendSwing = useCallback(
+    (peak: number, mag: number) => {
+      if (connStatus !== "open") return;
+      sendToHost({ type: "swing", t: Date.now(), peak, mag });
+    },
+    [connStatus, sendToHost]
+  );
 
   const sendNextBall = useCallback(() => {
-    const conn = connRef.current;
-    if (!conn?.open) return;
-    conn.send({ type: "next_ball", t: Date.now() });
+    if (connStatus !== "open") return;
+    sendToHost({ type: "next_ball", t: Date.now() });
     setDeliveryState("incoming");
     setLastAck("Ball requested…");
-  }, []);
+  }, [connStatus, sendToHost]);
 
   const sendStartInnings = useCallback(() => {
-    const conn = connRef.current;
-    if (!conn?.open) return;
-    conn.send({ type: "start_innings", t: Date.now() });
+    if (connStatus !== "open") return;
+    sendToHost({ type: "start_innings", t: Date.now() });
     setDeliveryState("idle");
     setLastAck("Innings start requested");
-  }, []);
+  }, [connStatus, sendToHost]);
 
   useDeviceSwing({
     onSwing: sendSwing,
@@ -48,61 +60,67 @@ export default function MotionCricketBat() {
     cooldownMs: 250,
   });
 
-  useEffect(() => {
-    const peer = new Peer();
-    peerRef.current = peer;
-    peer.on("open", () => setPeerReady(true));
-    peer.on("error", () => setConnStatus("error"));
-    return () => {
-      connRef.current?.close();
-      peer.destroy();
-    };
-  }, []);
-
   const disconnectFromHost = useCallback(() => {
-    connRef.current?.close();
-    connRef.current = null;
+    isConnectedRef.current = false;
+    if (welcomeTimeoutRef.current) {
+      window.clearTimeout(welcomeTimeoutRef.current);
+      welcomeTimeoutRef.current = null;
+    }
+    if (channelRef.current) {
+      sendToHost({ type: "disconnect_request", t: Date.now() });
+      void supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
     setConnStatus("idle");
     setDeliveryState("idle");
     setLastAck("Disconnected");
-  }, []);
+  }, [sendToHost]);
 
   const connectToHost = useCallback(() => {
-    if (!peerReady) {
-      setConnStatus("error");
-      setLastAck("Peer not ready yet. Try again.");
-      return;
-    }
     const trimmed = hostId.trim();
     if (!trimmed) {
       setConnStatus("error");
       setLastAck("Enter a valid Host ID.");
       return;
     }
-    connRef.current?.close();
-    connRef.current = null;
+    if (welcomeTimeoutRef.current) {
+      window.clearTimeout(welcomeTimeoutRef.current);
+      welcomeTimeoutRef.current = null;
+    }
+    if (channelRef.current) {
+      void supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+    isConnectedRef.current = false;
     setConnStatus("connecting");
+    setLastAck("Joining session...");
+    const channel = supabase.channel(`motion:${trimmed}`);
+    channelRef.current = channel;
 
-    const peer = peerRef.current;
-    if (!peer) return;
-
-    const conn = peer.connect(trimmed, { reliable: true });
-    connRef.current = conn;
-
-    conn.on("open", () => {
-      setConnStatus("open");
-    });
-    conn.on("data", (data: unknown) => {
-      const msg = data as HostToBatMessage;
+    channel.on("broadcast", { event: "host_msg" }, ({ payload }) => {
+      const msg = payload as HostToBatMessage;
+      if (msg?.type === "welcome") {
+        if (welcomeTimeoutRef.current) {
+          window.clearTimeout(welcomeTimeoutRef.current);
+          welcomeTimeoutRef.current = null;
+        }
+        isConnectedRef.current = true;
+        setConnStatus("open");
+        setLastAck(`Connected — ${msg.maxBalls} balls`);
+      }
+      if (msg?.type === "host_disconnected") {
+        isConnectedRef.current = false;
+        setConnStatus("idle");
+        setLastAck(msg.reason ?? "Host disconnected");
+        setDeliveryState("idle");
+        return;
+      }
       if (msg?.type === "ack") {
         setLastAck(`+${msg.runsThisBall} runs · total ${msg.totalRuns} · ball ${msg.ball}`);
       }
-      if (msg?.type === "welcome") {
-        setLastAck(`Ready — ${msg.maxBalls} balls`);
-      }
       if (msg?.type === "ball_started") {
         setDeliveryState("incoming");
-        setLastAck(`Ball ${msg.ball} incoming — swing now`);
+        setLastAck(`Ball ${msg.ball} incoming`);
       }
       if (msg?.type === "ball_result") {
         setDeliveryState("idle");
@@ -113,12 +131,38 @@ export default function MotionCricketBat() {
         setScore({ runs: msg.runs, wickets: msg.wickets, balls: msg.balls });
       }
     });
-    conn.on("close", () => {
-      setConnStatus("idle");
-      connRef.current = null;
+
+    void channel.subscribe((status) => {
+      if (status === "SUBSCRIBED") {
+        sendToHost({ type: "join_request", t: Date.now() });
+        if (welcomeTimeoutRef.current) window.clearTimeout(welcomeTimeoutRef.current);
+        welcomeTimeoutRef.current = window.setTimeout(() => {
+          if (!isConnectedRef.current) {
+            setConnStatus("error");
+            setLastAck("Could not connect. Check Host ID and try again.");
+            if (channelRef.current) {
+              void supabase.removeChannel(channelRef.current);
+              channelRef.current = null;
+            }
+          }
+        }, 8000);
+      } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+        isConnectedRef.current = false;
+        setConnStatus("error");
+        setLastAck("Channel connection failed.");
+      } else if (status === "CLOSED") {
+        isConnectedRef.current = false;
+        setConnStatus("idle");
+      }
     });
-    conn.on("error", () => setConnStatus("error"));
-  }, [hostId, peerReady]);
+  }, [hostId, sendToHost]);
+
+  useEffect(() => {
+    return () => {
+      if (welcomeTimeoutRef.current) window.clearTimeout(welcomeTimeoutRef.current);
+      if (channelRef.current) void supabase.removeChannel(channelRef.current);
+    };
+  }, []);
 
   async function enableMotion() {
     setPermissionHint(null);
@@ -141,7 +185,7 @@ export default function MotionCricketBat() {
       )}
 
       <div className="card">
-        <label htmlFor="hostid">Stadium Peer ID (from laptop)</label>
+        <label htmlFor="hostid">Stadium Host ID (from laptop)</label>
         <input
           id="hostid"
           className="motion-cricket-input"
