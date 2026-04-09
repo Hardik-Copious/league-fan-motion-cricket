@@ -7,6 +7,7 @@ import * as tf from "@tensorflow/tfjs";
 import "@tensorflow/tfjs-backend-webgl";
 import * as poseDetection from "@tensorflow-models/pose-detection";
 import { supabase } from "../supabaseClient";
+import { appendPreviousMatch } from "../lib/motionMatchHistory";
 import {
   MAX_BALLS,
   MOTION_CRICKET_GAME_TYPE,
@@ -41,6 +42,8 @@ const MOVENET_EDGES: [number, number][] = [
 
 const DELIVERY_MS = 2100;
 const PITCH_AT = 0.62;
+/** Phone swing must occur after delivery starts and within this window (ms) of overlap. */
+const SWING_MAX_AGE_MS = 360;
 
 type DeliveryProfile = {
   releaseX: number;
@@ -160,6 +163,8 @@ export default function MotionCricketHost({ session }: { session: Session | null
     bounceLift: 0,
   });
   const batNowRef = useRef<{ wristX: number; wristY: number; tipX: number; tipY: number } | null>(null);
+  const batConnectedRef = useRef(false);
+  const recentSwingAtRef = useRef(0);
 
   const [generatedHostId] = useState<string>(() =>
     (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
@@ -185,6 +190,11 @@ export default function MotionCricketHost({ session }: { session: Session | null
   const [lanDiscovery, setLanDiscovery] = useState<"idle" | "scanning" | "ok" | "fallback">(() =>
     shouldTryIceDiscovery() ? "scanning" : "ok"
   );
+  const [channelEpoch, setChannelEpoch] = useState(0);
+
+  useEffect(() => {
+    batConnectedRef.current = batConnected;
+  }, [batConnected]);
 
   useEffect(() => {
     const v = videoRef.current;
@@ -297,6 +307,7 @@ export default function MotionCricketHost({ session }: { session: Session | null
       deliveryActiveRef.current = true;
       swingResolvedRef.current = false;
       hitAnimActiveRef.current = false;
+      recentSwingAtRef.current = 0;
       ballNowRef.current = { x: 0, y: 0, t: 0 };
       // Realistic line/length variation per delivery.
       const w = canvasRef.current?.width || 1280;
@@ -351,7 +362,10 @@ export default function MotionCricketHost({ session }: { session: Session | null
         if (msg?.type === "disconnect_request") {
           setBatConnected(false);
         }
-        if (msg?.type === "swing") applySwing(msg.peak, "bat");
+        if (msg?.type === "swing") {
+          recentSwingAtRef.current = performance.now();
+          applySwing(msg.peak, "bat");
+        }
         if (msg?.type === "start_innings") startInnings();
         if (msg?.type === "next_ball") startNextBall("bat");
       } catch {
@@ -380,7 +394,7 @@ export default function MotionCricketHost({ session }: { session: Session | null
         channelRef.current = null;
       }
     };
-  }, [hostId, onData]);
+  }, [hostId, channelEpoch, onData]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -736,26 +750,44 @@ export default function MotionCricketHost({ session }: { session: Session | null
             ctx.font = `${Math.max(12, Math.floor(w * 0.014))}px sans-serif`;
             ctx.fillText("INCOMING", w * 0.05, h * 0.12);
 
-            // Overlap-only mode: hit only when ball overlaps the bat itself.
+            // Overlap + (when phone is connected) recent swing from the bat device.
             const bat = batNowRef.current;
             if (!swingResolvedRef.current && bat) {
-              // Do not allow "ghost hits" before the ball reaches the batter lane.
-              const inBattingZone = t >= 0.7 && y >= h * 0.54;
+              const inBattingZone = t >= 0.66 && t <= 0.93 && y >= h * 0.52;
               if (inBattingZone) {
                 const contactDist = distancePointToSegment(x, y, bat.wristX, bat.wristY, bat.tipX, bat.tipY);
-                // Strict bat-only overlap: ball radius + blade half-width + small margin.
                 const overlapTolerance = r + Math.max(12, w * 0.014);
                 if (contactDist <= overlapTolerance) {
-                swingResolvedRef.current = true;
-                const batVecX = bat.tipX - bat.wristX;
-                const batVecY = bat.tipY - bat.wristY;
-                const batAngle = Math.atan2(batVecY, batVecX);
-                const middleFactor = Math.max(0, 1 - contactDist / Math.max(20, overlapTolerance));
-                const faceQuality = Math.max(0, 1 - Math.abs(batAngle - Math.PI * 0.18) / 1.9);
-                const shotQuality = 0.68 * middleFactor + 0.32 * faceQuality;
-                // Requested outcomes on contact: only 4 or 6.
-                const rScore = shotQuality > 0.6 ? 6 : 4;
-                finishBall(rScore, "hit");
+                  const swingT = recentSwingAtRef.current;
+                  const nowSwing = performance.now();
+                  if (batConnectedRef.current) {
+                    if (
+                      swingT < deliveryStartMsRef.current ||
+                      nowSwing - swingT > SWING_MAX_AGE_MS
+                    ) {
+                      /* require phone swing in sync with this delivery */
+                    } else {
+                      swingResolvedRef.current = true;
+                      const batVecX = bat.tipX - bat.wristX;
+                      const batVecY = bat.tipY - bat.wristY;
+                      const batAngle = Math.atan2(batVecY, batVecX);
+                      const middleFactor = Math.max(0, 1 - contactDist / Math.max(20, overlapTolerance));
+                      const faceQuality = Math.max(0, 1 - Math.abs(batAngle - Math.PI * 0.18) / 1.9);
+                      const shotQuality = 0.68 * middleFactor + 0.32 * faceQuality;
+                      const rScore = shotQuality > 0.6 ? 6 : 4;
+                      finishBall(rScore, "hit");
+                    }
+                  } else {
+                    swingResolvedRef.current = true;
+                    const batVecX = bat.tipX - bat.wristX;
+                    const batVecY = bat.tipY - bat.wristY;
+                    const batAngle = Math.atan2(batVecY, batVecX);
+                    const middleFactor = Math.max(0, 1 - contactDist / Math.max(20, overlapTolerance));
+                    const faceQuality = Math.max(0, 1 - Math.abs(batAngle - Math.PI * 0.18) / 1.9);
+                    const shotQuality = 0.68 * middleFactor + 0.32 * faceQuality;
+                    const rScore = shotQuality > 0.6 ? 6 : 4;
+                    finishBall(rScore, "hit");
+                  }
                 }
               }
             }
@@ -859,6 +891,37 @@ export default function MotionCricketHost({ session }: { session: Session | null
     broadcast({ type: "score_sync", runs: 0, wickets: 0, balls: 0 });
   }
 
+  function endMatch() {
+    broadcast({ type: "host_disconnected", reason: "Match ended by host" });
+    appendPreviousMatch({
+      matchId: hostId,
+      runs: runsRef.current,
+      wickets: wicketsRef.current,
+      balls: ballRef.current,
+    });
+    playingRef.current = false;
+    deliveryActiveRef.current = false;
+    swingResolvedRef.current = false;
+    hitAnimActiveRef.current = false;
+    recentSwingAtRef.current = 0;
+    if (channelRef.current) {
+      void supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+    setBatConnected(false);
+    setDeliveryState("idle");
+    setFeedback("Match ended. Saved to Previous matches on Games.");
+    runsRef.current = 0;
+    wicketsRef.current = 0;
+    ballRef.current = 0;
+    setRuns(0);
+    setWickets(0);
+    setBall(0);
+    setLastBallRuns(null);
+    setPhase("ready");
+    setChannelEpoch((e) => e + 1);
+  }
+
   async function submitScore() {
     setSubmitErr(null);
     setSubmitMsg(null);
@@ -884,8 +947,9 @@ export default function MotionCricketHost({ session }: { session: Session | null
       </Link>
       <h1>Motion cricket — stadium (laptop)</h1>
       <p className="muted">
-        Stadium mode: phone sends <strong>Next Ball</strong>. A hit is auto-detected when your pose-driven bat overlaps
-        the ball. Press <kbd className="kbd-inline">N</kbd> for next ball.
+        Stadium mode: phone sends <strong>Next Ball</strong>. When the bat phone is connected, a hit needs both pose
+        overlap <em>and</em> a recent motion swing on the phone (reduces late “ghost” hits). Press{" "}
+        <kbd className="kbd-inline">N</kbd> for next ball (no phone).
       </p>
       <p className="muted small">
         Match ID: <strong>{hostId}</strong>. Join from <Link to="/games/match">Match Lobby</Link> on both devices.
@@ -950,6 +1014,16 @@ export default function MotionCricketHost({ session }: { session: Session | null
           <p className="muted">Delivery: {deliveryState === "in_flight" ? "In flight" : "Tap Next Ball on phone"}</p>
           {lastBallRuns != null && <p className="muted">Last ball: {lastBallRuns} runs</p>}
           {feedback && <p className="motion-cricket-feedback">{feedback}</p>}
+          {phase === "playing" && (
+            <p style={{ marginTop: "0.75rem" }}>
+              <button type="button" className="btn" onClick={endMatch}>
+                End match
+              </button>
+              <span className="muted small" style={{ marginLeft: "0.6rem" }}>
+                Disconnects bat, saves to Games → Previous matches.
+              </span>
+            </p>
+          )}
         </div>
       )}
 
@@ -965,6 +1039,25 @@ export default function MotionCricketHost({ session }: { session: Session | null
           {!session && <p className="muted">Sign in to save.</p>}
           {submitMsg && <p>{submitMsg}</p>}
           {submitErr && <p className="error">{submitErr}</p>}
+          <p style={{ marginTop: "0.75rem" }}>
+            <button
+              type="button"
+              className="btn"
+              onClick={() =>
+                appendPreviousMatch({
+                  matchId: hostId,
+                  runs,
+                  wickets,
+                  balls: ball,
+                })
+              }
+            >
+              Save to device history
+            </button>
+            <span className="muted small" style={{ marginLeft: "0.5rem" }}>
+              Games → Previous matches
+            </span>
+          </p>
           <p style={{ marginTop: "0.75rem" }}>
             <button type="button" className="btn" onClick={startInnings}>
               Play again

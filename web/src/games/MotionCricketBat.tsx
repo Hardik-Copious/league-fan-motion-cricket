@@ -58,7 +58,7 @@ export default function MotionCricketBat() {
     onSwing: sendSwing,
     enabled: motionOn && connStatus === "open",
     threshold: 10,
-    cooldownMs: 250,
+    cooldownMs: 200,
   });
 
   const disconnectFromHost = useCallback(() => {
@@ -220,7 +220,9 @@ export default function MotionCricketBat() {
           {motionOn ? "Motion active" : "Enable motion sensor"}
         </button>
         {permissionHint && <p className="error">{permissionHint}</p>}
-        {motionOn && <p className="muted">Motion is optional in overlap mode.</p>}
+        {motionOn && (
+          <p className="muted">Swing the phone during the ball’s approach — the stadium scores only when swing lines up with bat contact.</p>
+        )}
         {lastAck && <p className="motion-cricket-feedback">{lastAck}</p>}
         <p className="muted small">
           Score: {score.runs}/{score.wickets} · Ball {score.balls}

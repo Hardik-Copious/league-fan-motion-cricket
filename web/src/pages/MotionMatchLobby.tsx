@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import QrMatchScanner from "../components/QrMatchScanner";
 
 type Role = "laptop" | "phone";
 
@@ -17,6 +18,7 @@ export default function MotionMatchLobby() {
   const [joinRole, setJoinRole] = useState<Role>("phone");
   const [createdMatchId, setCreatedMatchId] = useState<string | null>(null);
   const [createRole, setCreateRole] = useState<Role>("laptop");
+  const [scanOpen, setScanOpen] = useState(false);
 
   const createdHostLink = useMemo(
     () => (createdMatchId ? `/games/motion?match=${encodeURIComponent(createdMatchId)}` : ""),
@@ -25,6 +27,16 @@ export default function MotionMatchLobby() {
   const createdBatLink = useMemo(
     () => (createdMatchId ? `/games/bat?host=${encodeURIComponent(createdMatchId)}` : ""),
     [createdMatchId]
+  );
+
+  const onQrDecoded = useCallback(
+    (id: string) => {
+      setJoinId(id);
+      setScanOpen(false);
+      if (joinRole === "laptop") navigate(`/games/motion?match=${encodeURIComponent(id)}`);
+      else navigate(`/games/bat?host=${encodeURIComponent(id)}`);
+    },
+    [joinRole, navigate]
   );
 
   function onCreate() {
@@ -47,7 +59,9 @@ export default function MotionMatchLobby() {
         ← Games
       </Link>
       <h1>Motion match lobby</h1>
-      <p className="muted">Start a new match or join an existing one using Match ID.</p>
+      <p className="muted">Start a new match or join an existing one using Match ID or QR.</p>
+
+      {scanOpen && <QrMatchScanner onDecoded={onQrDecoded} onClose={() => setScanOpen(false)} />}
 
       <div className="card">
         <h2>Start new match</h2>
@@ -94,6 +108,14 @@ export default function MotionMatchLobby() {
 
       <div className="card">
         <h2>Join existing match</h2>
+        <p className="muted small">
+          Use the camera to scan the QR from the stadium screen (contains the Match ID), or type the ID below.
+        </p>
+        <p style={{ marginTop: "0.5rem" }}>
+          <button type="button" className="btn primary" onClick={() => setScanOpen(true)}>
+            Open camera &amp; scan QR
+          </button>
+        </p>
         <label htmlFor="join-match-id">Match ID</label>
         <input
           id="join-match-id"

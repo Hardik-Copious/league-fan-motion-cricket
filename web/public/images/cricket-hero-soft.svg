@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a2744"/>
+      <stop offset="55%" stop-color="#243b55"/>
+      <stop offset="100%" stop-color="#1e3d2f"/>
+    </linearGradient>
+    <linearGradient id="field" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2d5a3d"/>
+      <stop offset="100%" stop-color="#1a3d28"/>
+    </linearGradient>
+    <radialGradient id="light" cx="70%" cy="25%" r="45%">
+      <stop offset="0%" stop-color="rgba(255,240,200,0.35)"/>
+      <stop offset="100%" stop-color="rgba(255,240,200,0)"/>
+    </radialGradient>
+  </defs>
+  <rect width="1200" height="400" fill="url(#sky)"/>
+  <ellipse cx="600" cy="420" rx="900" ry="220" fill="url(#field)" opacity="0.95"/>
+  <ellipse cx="600" cy="380" rx="520" ry="90" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="3"/>
+  <ellipse cx="600" cy="380" rx="180" ry="36" fill="rgba(210,180,120,0.25)" stroke="rgba(255,255,255,0.15)" stroke-width="2"/>
+  <rect width="1200" height="400" fill="url(#light)"/>
+</svg>
