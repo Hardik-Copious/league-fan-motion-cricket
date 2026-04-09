@@ -233,7 +233,7 @@ export default function MotionCricketHost({ session }: { session: Session | null
   }, []);
 
   const finishBall = useCallback(
-    (runsThisBall: number, outcome: "hit" | "miss" | "late" | "edge") => {
+    (runsThisBall: number, outcome: "hit" | "miss" | "late" | "edge" | "bowled") => {
       if (!deliveryActiveRef.current) return;
       deliveryActiveRef.current = false;
       swingResolvedRef.current = true;
@@ -247,7 +247,7 @@ export default function MotionCricketHost({ session }: { session: Session | null
       setRuns(runsRef.current);
       setLastBallRuns(runsThisBall);
 
-      if (runsThisBall === 0 && outcome === "late") {
+      if (runsThisBall === 0 && (outcome === "late" || outcome === "bowled")) {
         wicketsRef.current += 1;
         setWickets(wicketsRef.current);
       }
@@ -261,7 +261,9 @@ export default function MotionCricketHost({ session }: { session: Session | null
               : "Thick edge but fielded"
             : outcome === "late"
               ? "Too late — wicket"
-              : "Missed the ball";
+              : outcome === "bowled"
+                ? "Bowled — wicket!"
+                : "Missed — dot ball";
       setFeedback(text);
 
       if (outcome === "hit" || outcome === "edge") {
@@ -792,9 +794,11 @@ export default function MotionCricketHost({ session }: { session: Session | null
               }
             }
 
-            if (t >= 1.12 && !swingResolvedRef.current) {
-              swingResolvedRef.current = true;
-              finishBall(0, "miss");
+            /* t is capped ~1.08 in getBallState — use raw normalized time so miss always resolves */
+            const DELIVERY_RESOLVED_T = 1.06;
+            if (tRaw >= DELIVERY_RESOLVED_T && !swingResolvedRef.current) {
+              const bowled = Math.random() < 0.22;
+              finishBall(0, bowled ? "bowled" : "miss");
             }
           }
 

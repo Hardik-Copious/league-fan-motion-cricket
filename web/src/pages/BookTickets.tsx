@@ -1,32 +1,55 @@
 import { Link } from "react-router-dom";
+import PageBanner from "../components/PageBanner";
+import { LEAGUE_DISPLAY_NAME } from "../data/bookingMock";
 
 export default function BookTickets() {
   return (
     <>
-      <div className="book-tickets-hero">
-        <h1>Book tickets</h1>
+      <PageBanner variant="tickets" />
+      <div className="book-tickets-hero book-mock-hero">
+        <h1>{LEAGUE_DISPLAY_NAME}</h1>
         <p className="muted">
-          Reserve seats for upcoming league fixtures. This page is a demo hub — wire your real ticketing provider URL
-          when ready.
+          Mock ticket centre — sample fixtures, seat tiers, and a fake checkout. No real payments.
         </p>
       </div>
 
-      <div className="card card-textured">
-        <h2>Next steps</h2>
-        <p className="muted">
-          Replace this section with your vendor widget (BookMyShow, Ticketmaster, in-house checkout) or an external link.
-        </p>
-        <p style={{ marginTop: "0.75rem" }}>
-          <a className="btn primary" href="https://example.com/tickets" target="_blank" rel="noreferrer">
-            Open demo ticketing site
-          </a>
-        </p>
+      <div className="book-hub-grid">
+        <Link to="/book/fixtures" className="card book-hub-tile book-hub-tile--fixtures">
+          <span className="book-hub-icon" aria-hidden>
+            🏟
+          </span>
+          <h2 className="book-hub-title">Browse fixtures</h2>
+          <p className="muted">Dummy schedule with venues &amp; prices</p>
+        </Link>
+        <Link to="/matches" className="card book-hub-tile book-hub-tile--live">
+          <span className="book-hub-icon" aria-hidden>
+            📋
+          </span>
+          <h2 className="book-hub-title">League matches</h2>
+          <p className="muted">Real data from the app database</p>
+        </Link>
+        <div className="card book-hub-tile book-hub-tile--note">
+          <h2 className="book-hub-title">Integrations</h2>
+          <p className="muted small">
+            Swap this flow for BookMyShow, Razorpay, or your own API — the mock pages are structured placeholders.
+          </p>
+        </div>
+      </div>
+
+      <div className="card card-textured" style={{ marginTop: "1rem" }}>
+        <h2>Quick flow</h2>
+        <ol className="book-mock-list">
+          <li>
+            <Link to="/book/fixtures">Fixtures</Link> → event detail → seat tier &amp; quantity
+          </li>
+          <li>Checkout (after seats) → confirmation with a mock reference number</li>
+        </ol>
       </div>
 
       <p className="muted" style={{ marginTop: "1rem" }}>
-        <Link to="/matches">View match list</Link>
-        {" · "}
         <Link to="/">Home</Link>
+        {" · "}
+        <Link to="/games">Games</Link>
       </p>
     </>
   );

@@ -52,7 +52,7 @@ class HomeScreen extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                       Text(
-                        'Demo Premier League',
+                        'Hogwarts Premier League',
                         style: Theme.of(context).textTheme.labelLarge?.copyWith(
                               color: Colors.amber.shade200,
                               letterSpacing: 1.2,
@@ -67,7 +67,7 @@ class HomeScreen extends StatelessWidget {
                             ),
                       ),
                       Text(
-                        'Archive · stats · live centre (fictional)',
+                        'Archive · stats · live centre',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white70),
                       ),
                         ],

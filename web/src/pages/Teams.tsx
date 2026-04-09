@@ -23,7 +23,7 @@ export default function Teams() {
       <PageBanner variant="teams" />
       <header className="page-header">
         <h1>Franchises</h1>
-        <p className="muted">Ten fictional teams — tap for fixtures and venue.</p>
+        <p className="muted">Ten league teams — tap for fixtures and venue.</p>
       </header>
       <div className="team-grid">
         {teams.map((t) => (

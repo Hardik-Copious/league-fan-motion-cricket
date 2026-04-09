@@ -126,7 +126,9 @@ export default function MotionCricketBat() {
       if (msg?.type === "ball_result") {
         setDeliveryState("idle");
         setScore({ runs: msg.totalRuns, wickets: msg.wickets, balls: msg.ball });
-        setLastAck(`Ball ${msg.ball}: ${msg.outcome} · +${msg.runs}`);
+        setLastAck(
+          `Ball ${msg.ball}: ${msg.outcome}${msg.outcome === "bowled" ? " (wicket)" : ""} · +${msg.runs}`
+        );
       }
       if (msg?.type === "score_sync") {
         setScore({ runs: msg.runs, wickets: msg.wickets, balls: msg.balls });

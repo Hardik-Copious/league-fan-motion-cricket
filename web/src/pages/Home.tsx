@@ -59,14 +59,18 @@ export default function Home({ session }: { session: Session | null }) {
 
   return (
     <>
-      <header className="hero">
+      <header className="hero hero--cricket">
         <div className="hero-visual" aria-hidden />
+        <div className="hero-cricket-deco" aria-hidden>
+          <span className="hero-cricket-ball" />
+          <span className="hero-cricket-ball hero-cricket-ball--delay" />
+        </div>
         <div className="hero-inner">
-          <div className="hero-badge">Demo Premier League · {DEFAULT_SEASON}</div>
+          <div className="hero-badge">Hogwarts Premier League · {DEFAULT_SEASON}</div>
           <h1 className="hero-title">Where every over tells a story</h1>
           <p className="hero-sub">
-            Fictional T20 league — multi-season archive, live-style match centre, stats, and fan picks. Not affiliated
-            with any real tournament.
+            T20 league — multi-season archive, live-style match centre, stats, and fan picks. A playful fan app inspired
+            by the wizarding world.
           </p>
           <div className="hero-actions">
             <Link to={`/matches?season=${DEFAULT_SEASON}`} className="btn primary">
@@ -194,7 +198,12 @@ export default function Home({ session }: { session: Session | null }) {
           <Link to="/games" className="card explore-tile explore-tile--visual explore-tile--visual-games">
             <span className="explore-icon">◇</span>
             <strong>Fan games</strong>
-            <span className="muted">Demo scores & leaderboard</span>
+            <span className="muted">Motion cricket & leaderboard</span>
+          </Link>
+          <Link to="/book" className="card explore-tile explore-tile--visual explore-tile--visual-tickets">
+            <span className="explore-icon">🎟</span>
+            <strong>Tickets</strong>
+            <span className="muted">Mock booking flow</span>
           </Link>
           {!session && (
             <Link

@@ -1,4 +1,4 @@
-import { NavLink, Route, Routes } from "react-router-dom";
+import { NavLink, Route, Routes, useLocation } from "react-router-dom";
 import { lazy, Suspense, useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { isSupabaseConfigured, supabase } from "./supabaseClient";
@@ -16,8 +16,27 @@ import Players from "./pages/Players";
 import PlayerDetail from "./pages/PlayerDetail";
 import MotionMatchLobby from "./pages/MotionMatchLobby";
 import BookTickets from "./pages/BookTickets";
+import BookFixtures from "./pages/book/BookFixtures";
+import BookEventDetail from "./pages/book/BookEventDetail";
+import BookSeatSelect from "./pages/book/BookSeatSelect";
+import BookCheckout from "./pages/book/BookCheckout";
+import BookConfirmation from "./pages/book/BookConfirmation";
 const MotionCricketHost = lazy(() => import("./games/MotionCricketHost"));
 const MotionCricketBat = lazy(() => import("./games/MotionCricketBat"));
+
+function NavTicketsLink() {
+  const loc = useLocation();
+  const ticketsActive =
+    loc.pathname === "/book" || loc.pathname.startsWith("/book/");
+  return (
+    <NavLink
+      to="/book"
+      className={({ isActive }) => (isActive || ticketsActive ? "active" : "")}
+    >
+      Tickets
+    </NavLink>
+  );
+}
 
 function App() {
   const [session, setSession] = useState<Session | null>(null);
@@ -75,9 +94,7 @@ function App() {
         <NavLink to="/games" className={({ isActive }) => (isActive ? "active" : "")}>
           Games
         </NavLink>
-        <NavLink to="/book" className={({ isActive }) => (isActive ? "active" : "")}>
-          Tickets
-        </NavLink>
+        <NavTicketsLink />
         <span className="nav-spacer" />
         {session ? (
           <>
@@ -111,6 +128,11 @@ function App() {
         <Route path="/games/match" element={<MotionMatchLobby />} />
         <Route path="/games/motion" element={<MotionCricketHost session={session} />} />
         <Route path="/games/bat" element={<MotionCricketBat />} />
+        <Route path="/book/fixtures" element={<BookFixtures />} />
+        <Route path="/book/checkout" element={<BookCheckout />} />
+        <Route path="/book/confirmation" element={<BookConfirmation />} />
+        <Route path="/book/:eventId/seats" element={<BookSeatSelect />} />
+        <Route path="/book/:eventId" element={<BookEventDetail />} />
         <Route path="/book" element={<BookTickets />} />
         <Route path="/auth" element={<Auth />} />
       </Routes>

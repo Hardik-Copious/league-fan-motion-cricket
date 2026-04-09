@@ -12,7 +12,14 @@ export type HostToBatMessage =
   | { type: "welcome"; maxBalls: number }
   | { type: "host_disconnected"; reason?: string }
   | { type: "ball_started"; ball: number; speed: number; etaMs: number }
-  | { type: "ball_result"; ball: number; runs: number; outcome: "hit" | "miss" | "late" | "edge"; totalRuns: number; wickets: number }
+  | {
+      type: "ball_result";
+      ball: number;
+      runs: number;
+      outcome: "hit" | "miss" | "late" | "edge" | "bowled";
+      totalRuns: number;
+      wickets: number;
+    }
   | { type: "score_sync"; runs: number; wickets: number; balls: number };
 
 export const MOTION_CRICKET_GAME_TYPE = "motion_cricket_v1";

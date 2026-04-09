@@ -60,6 +60,10 @@ button {
   padding: 1rem 1.25rem;
   margin-bottom: 0.75rem;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease,
+    border-color 0.18s ease;
 }
 
 .nav {
@@ -203,21 +207,57 @@ th {
 .hero-visual {
   position: absolute;
   inset: 0;
-  background: url("/images/cricket-hero.png") center 40% / cover no-repeat;
-  opacity: 0.42;
-  filter: saturate(1.05);
+  /* AI hero art — keep as primary; overlays add depth only */
+  background:
+    url("/images/cricket-hero.png") center 40% / cover no-repeat,
+    linear-gradient(125deg, rgba(30, 80, 55, 0.28) 0%, transparent 42%),
+    radial-gradient(ellipse 80% 50% at 50% 100%, rgba(26, 61, 40, 0.45) 0%, transparent 55%);
+  opacity: 0.48;
+  filter: saturate(1.08);
+}
+
+.hero--cricket .hero-visual {
+  opacity: 0.58;
 }
 
 .hero-visual::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(7, 10, 16, 0.2) 0%, rgba(7, 10, 16, 0.92) 85%);
+  background: linear-gradient(180deg, rgba(7, 10, 16, 0.15) 0%, rgba(7, 10, 16, 0.9) 88%);
+}
+
+.hero-cricket-deco {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.hero-cricket-ball {
+  position: absolute;
+  width: 52px;
+  height: 52px;
+  right: 8%;
+  top: 22%;
+  background: url("/images/cricket-ball-deco.svg") center / contain no-repeat;
+  opacity: 0.55;
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.45));
+}
+
+.hero-cricket-ball--delay {
+  left: 6%;
+  right: auto;
+  top: 48%;
+  width: 36px;
+  height: 36px;
+  opacity: 0.4;
 }
 
 .hero-inner {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   padding: 2.25rem 1.25rem 2.5rem;
 }
 
@@ -316,12 +356,24 @@ th {
   box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35);
 }
 
+/* Extra colour wash over AI banner art (does not replace images) */
+.page-banner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 90% 70% at 30% 40%, rgba(56, 189, 248, 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse 70% 60% at 80% 60%, rgba(251, 191, 36, 0.08) 0%, transparent 45%);
+  pointer-events: none;
+  z-index: 0;
+}
+
 .page-banner::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(105deg, rgba(7, 10, 16, 0.45) 0%, rgba(7, 10, 16, 0.82) 55%, rgba(7, 10, 16, 0.68) 100%);
+  background: linear-gradient(105deg, rgba(7, 10, 16, 0.42) 0%, rgba(7, 10, 16, 0.78) 55%, rgba(7, 10, 16, 0.65) 100%);
   pointer-events: none;
+  z-index: 1;
 }
 
 .page-banner--matches {
@@ -354,6 +406,11 @@ th {
 
 .page-banner--profile {
   background-image: url("/images/banner-profile.png");
+}
+
+.page-banner--tickets {
+  background-image: url("/images/banner-games.png");
+  background-position: center 35%;
 }
 
 /* Auth: banner + form column */
@@ -450,6 +507,10 @@ th {
   background-image: url("/images/banner-auth.png");
 }
 
+.explore-tile--visual-tickets {
+  background-image: url("/images/banner-matches.png");
+}
+
 .section-lead {
   margin: -0.25rem 0 1rem;
   font-size: 0.95rem;
@@ -497,8 +558,10 @@ th {
   content: "";
   position: absolute;
   inset: 0;
-  background: url("/images/cricket-texture.png") center / cover no-repeat;
-  opacity: 0.14;
+  background:
+    linear-gradient(140deg, rgba(45, 107, 69, 0.12) 0%, transparent 55%),
+    url("/images/cricket-texture.png") center / cover no-repeat;
+  opacity: 0.12;
   pointer-events: none;
 }
 
@@ -1033,12 +1096,17 @@ a.player-card:hover {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
-  transition: border-color 0.15s ease;
+  transition:
+    border-color 0.18s ease,
+    transform 0.22s ease,
+    box-shadow 0.22s ease;
 }
 
 .explore-tile:hover {
   border-color: rgba(56, 189, 248, 0.5);
   text-decoration: none;
+  transform: translateY(-3px);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.28);
 }
 
 .explore-tile-accent {
@@ -1139,8 +1207,8 @@ a.player-card:hover {
 
 .team-hero.team-hero--art-player {
   background:
-    linear-gradient(180deg, rgba(12, 28, 22, 0.25) 0%, rgba(18, 24, 38, 0.94) 100%),
-    url("/images/cricket-hero-soft.svg") center center / cover no-repeat;
+    linear-gradient(180deg, rgba(12, 28, 22, 0.22) 0%, rgba(18, 24, 38, 0.94) 100%),
+    url("/images/banner-players.png") center 28% / cover no-repeat;
 }
 
 .player-bat-card {
@@ -1153,8 +1221,13 @@ a.player-card:hover {
   border-radius: 14px;
   border: 1px solid var(--border);
   background:
-    linear-gradient(135deg, rgba(30, 58, 95, 0.4) 0%, rgba(18, 24, 38, 0.95) 100%),
-    url("/images/cricket-hero-soft.svg") center 40% / cover no-repeat;
+    linear-gradient(135deg, rgba(30, 58, 95, 0.42) 0%, rgba(18, 24, 38, 0.96) 100%),
+    radial-gradient(ellipse 100% 80% at 80% 20%, rgba(251, 191, 36, 0.12) 0%, transparent 50%),
+    url("/images/banner-matches.png") center 42% / cover no-repeat;
+}
+
+.page-banner + .book-tickets-hero {
+  margin-top: 0.35rem;
 }
 
 .qr-scan-modal {
@@ -1310,4 +1383,357 @@ a.player-card:hover {
 
 .small {
   font-size: 0.85rem;
+}
+
+/* Subtle motion (respect reduced-motion) */
+@media (prefers-reduced-motion: no-preference) {
+  .hero-visual {
+    animation: hero-bg-drift 28s ease-in-out infinite alternate;
+  }
+
+  .hero-cricket-ball {
+    animation: hero-ball-float 5s ease-in-out infinite;
+  }
+
+  .hero-cricket-ball--delay {
+    animation: hero-ball-float 6.5s ease-in-out infinite reverse;
+    animation-delay: -1s;
+  }
+
+  .hero-badge,
+  .hero-title,
+  .hero-sub,
+  .hero-actions {
+    animation: content-rise 0.75s ease-out both;
+  }
+
+  .hero-badge {
+    animation-delay: 0.04s;
+  }
+  .hero-title {
+    animation-delay: 0.1s;
+  }
+  .hero-sub {
+    animation-delay: 0.18s;
+  }
+  .hero-actions {
+    animation-delay: 0.26s;
+  }
+
+  .page-banner {
+    animation: banner-bg-shift 22s ease-in-out infinite alternate;
+  }
+
+  .section-visual-strip {
+    animation: strip-shimmer 8s ease-in-out infinite;
+    background-size: 200% 100%;
+  }
+
+  .card:hover:not(.motion-cricket-stage):not(.team-tile):not(.explore-tile) {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.32);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-visual,
+  .hero-cricket-ball,
+  .page-banner,
+  .section-visual-strip {
+    animation: none !important;
+  }
+}
+
+@keyframes hero-bg-drift {
+  from {
+    transform: scale(1.03) translate(0, 0);
+  }
+  to {
+    transform: scale(1.09) translate(-1.5%, 1%);
+  }
+}
+
+@keyframes hero-ball-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(8deg);
+  }
+}
+
+@keyframes content-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes banner-bg-shift {
+  from {
+    background-position: 48% 42%;
+  }
+  to {
+    background-position: 54% 58%;
+  }
+}
+
+@keyframes strip-shimmer {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* Booking mockups — layered over AI banner art via PageBanner + card textures */
+.book-mock-hero {
+  margin: 0 0 1.25rem;
+  padding: 0.25rem 0 0.5rem;
+}
+
+.book-mock-hero h1 {
+  margin: 0 0 0.35rem;
+  font-size: clamp(1.35rem, 3vw, 1.75rem);
+}
+
+.book-hub-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+  gap: 0.85rem;
+}
+
+.book-hub-tile {
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-height: 140px;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.book-hub-tile::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(165deg, rgba(7, 10, 16, 0.88) 0%, rgba(18, 24, 38, 0.82) 100%);
+  z-index: 0;
+}
+
+.book-hub-tile > * {
+  position: relative;
+  z-index: 1;
+}
+
+.book-hub-tile:hover {
+  transform: translateY(-3px);
+  text-decoration: none;
+  border-color: rgba(56, 189, 248, 0.45);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.35);
+}
+
+.book-hub-tile--fixtures {
+  background-image: url("/images/banner-matches.png");
+}
+
+.book-hub-tile--live {
+  background-image: url("/images/banner-stats.png");
+}
+
+.book-hub-tile--note {
+  background-image: url("/images/banner-standings.png");
+}
+
+.book-hub-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.book-hub-title {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.book-fixture-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  gap: 0.85rem;
+}
+
+.book-fixture-card {
+  border-left: 4px solid var(--gold);
+}
+
+.book-fixture-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.book-pill {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(56, 189, 248, 0.15);
+  color: var(--accent);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+}
+
+.book-fixture-teams {
+  margin: 0.35rem 0;
+  font-size: 1.05rem;
+  line-height: 1.3;
+}
+
+.book-vs {
+  color: var(--muted);
+  font-weight: 600;
+  padding: 0 0.25rem;
+}
+
+.book-ticket-from {
+  margin: 0.5rem 0 0.75rem;
+  font-size: 0.95rem;
+}
+
+.book-mock-list {
+  margin: 0.5rem 0 0;
+  padding-left: 1.2rem;
+  line-height: 1.6;
+}
+
+.book-seat-map {
+  margin-bottom: 0.85rem;
+}
+
+.book-seat-pitch {
+  margin: 0 auto 0.75rem;
+  max-width: 420px;
+  height: 72px;
+  border-radius: 50%;
+  border: 2px solid rgba(45, 90, 61, 0.85);
+  background: linear-gradient(180deg, rgba(45, 90, 61, 0.55) 0%, rgba(26, 61, 40, 0.9) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.35);
+}
+
+.book-seat-pitch-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.book-seat-hint {
+  text-align: center;
+  margin-bottom: 0.75rem;
+}
+
+.book-seat-stands {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+}
+
+@media (min-width: 560px) {
+  .book-seat-stands {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.book-stand-btn {
+  padding: 0.65rem 0.5rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: rgba(15, 19, 26, 0.95);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  text-align: center;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.book-stand-btn:hover {
+  border-color: rgba(56, 189, 248, 0.45);
+}
+
+.book-stand-btn.active {
+  border-color: var(--accent);
+  background: rgba(56, 189, 248, 0.12);
+}
+
+.book-checkout-total {
+  font-size: 1.15rem;
+  margin-top: 0.75rem;
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.book-confirm-hero {
+  text-align: center;
+}
+
+.book-confirm-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, rgba(34, 197, 94, 0.35), rgba(22, 163, 74, 0.55));
+  border: 2px solid rgba(74, 222, 128, 0.6);
+  font-size: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.book-confirm-card {
+  border-left: 4px solid rgba(74, 222, 128, 0.65);
+}
+
+.book-confirm-match {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0.25rem 0;
+}
+
+.book-confirm-rule {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 1rem 0;
+}
+
+.book-event-detail-card h2 {
+  margin-top: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .book-hub-tile:hover {
+    transform: none;
+  }
 }

@@ -163,7 +163,7 @@ export default function PlayerDetail() {
               {team.name} · {team.short_code}
             </Link>
           </p>
-          <p className="muted player-detail-tagline">Leaderboard snapshot (demo data).</p>
+          <p className="muted player-detail-tagline">Leaderboard snapshot.</p>
         </div>
       </header>
 

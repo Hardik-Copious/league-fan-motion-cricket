@@ -13,9 +13,9 @@ alter table public.seasons enable row level security;
 create policy seasons_read_all on public.seasons for select using (true);
 
 insert into public.seasons (id, label, year, tagline, champion_team_id, runner_up_team_id) values
-  ('2024', 'Demo Premier League 2024', 2024, 'The inaugural chapter — floodlights and fairy tales', 'mum', 'che'),
-  ('2025', 'Demo Premier League 2025', 2025, 'Spin, pace, and last-ball theatre', 'che', 'blr'),
-  ('2026', 'Demo Premier League 2026', 2026, 'Current season — race to the trophy', null, null);
+  ('2024', 'Hogwarts Premier League 2024', 2024, 'The inaugural chapter — floodlights and moving portraits', 'mum', 'che'),
+  ('2025', 'Hogwarts Premier League 2025', 2025, 'Spin, pace, and last-ball theatre under enchanted lights', 'che', 'blr'),
+  ('2026', 'Hogwarts Premier League 2026', 2026, 'Current season — race to the House Cup', null, null);
 
 alter table public.matches add column season_id text;
 update public.matches set season_id = '2026' where season_id is null;

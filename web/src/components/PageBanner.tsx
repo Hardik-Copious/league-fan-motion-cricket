@@ -7,7 +7,8 @@ export type PageBannerVariant =
   | "teams"
   | "games"
   | "auth"
-  | "profile";
+  | "profile"
+  | "tickets";
 
 export default function PageBanner({ variant }: { variant: PageBannerVariant }) {
   return <div className={`page-banner page-banner--${variant}`} aria-hidden />;
