@@ -1387,6 +1387,49 @@ a.player-card:hover {
 
 .motion-cricket-stage.steering-race-stage {
   max-width: 920px;
+  border-radius: 16px;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.07),
+    0 18px 48px rgba(0, 0, 0, 0.42),
+    0 0 100px rgba(56, 189, 248, 0.06);
+}
+
+.motion-cricket-stage.steering-race-stage .motion-cricket-canvas {
+  border-radius: 16px;
+}
+
+.steering-race-title {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #f8fafc;
+  text-shadow:
+    0 0 48px rgba(56, 189, 248, 0.35),
+    0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.steering-race-quickstart {
+  border-color: rgba(56, 189, 248, 0.25);
+  background: linear-gradient(165deg, rgba(15, 23, 42, 0.55), rgba(8, 12, 22, 0.35));
+}
+
+.steering-race-quickstart-title {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text, #e2e8f0);
+}
+
+.steering-race-quickstart-list {
+  margin-bottom: 0;
+  padding-left: 1.15rem;
+  line-height: 1.55;
+}
+
+.steering-race-privacy {
+  margin-top: 0.65rem;
+  margin-bottom: 0;
+  opacity: 0.92;
 }
 
 /* Hand virtual keyboard: visible camera so the stream decodes and tracks (hidden video stays 1×1px). */
