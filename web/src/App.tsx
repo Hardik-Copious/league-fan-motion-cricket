@@ -21,8 +21,15 @@ import BookEventDetail from "./pages/book/BookEventDetail";
 import BookSeatSelect from "./pages/book/BookSeatSelect";
 import BookCheckout from "./pages/book/BookCheckout";
 import BookConfirmation from "./pages/book/BookConfirmation";
+import BasketballGames from "./pages/BasketballGames";
 const MotionCricketHost = lazy(() => import("./games/MotionCricketHost"));
 const MotionCricketBat = lazy(() => import("./games/MotionCricketBat"));
+const MotionBasketballHost = lazy(() => import("./games/MotionBasketballHost"));
+const BasketballTargetRushHost = lazy(() => import("./games/BasketballTargetRushHost"));
+const MotionSteeringHost = lazy(() => import("./games/MotionSteeringHost"));
+const MotionSteeringRaceHost = lazy(() => import("./games/MotionSteeringRaceHost"));
+const NfsArcadeRaceHost = lazy(() => import("./games/NfsArcadeRaceHost"));
+const HandVirtualInputHost = lazy(() => import("./games/HandVirtualInputHost"));
 
 function NavTicketsLink() {
   const loc = useLocation();
@@ -127,6 +134,13 @@ function App() {
         <Route path="/games" element={<Games session={session} />} />
         <Route path="/games/match" element={<MotionMatchLobby />} />
         <Route path="/games/motion" element={<MotionCricketHost session={session} />} />
+        <Route path="/games/basketball" element={<BasketballGames />} />
+        <Route path="/games/basketball/target-rush" element={<BasketballTargetRushHost session={session} />} />
+        <Route path="/games/motion-basketball" element={<MotionBasketballHost session={session} />} />
+        <Route path="/games/motion-steering" element={<MotionSteeringHost />} />
+        <Route path="/games/motion-steering-race" element={<MotionSteeringRaceHost />} />
+        <Route path="/games/night-heat" element={<NfsArcadeRaceHost />} />
+        <Route path="/games/hand-virtual-input" element={<HandVirtualInputHost />} />
         <Route path="/games/bat" element={<MotionCricketBat />} />
         <Route path="/book/fixtures" element={<BookFixtures />} />
         <Route path="/book/checkout" element={<BookCheckout />} />

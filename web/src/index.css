@@ -1385,6 +1385,38 @@ a.player-card:hover {
   overflow: hidden;
 }
 
+.motion-cricket-stage.steering-race-stage {
+  max-width: 920px;
+}
+
+/* Hand virtual keyboard: visible camera so the stream decodes and tracks (hidden video stays 1×1px). */
+.motion-cricket-stage.hand-virtual-stage {
+  overflow: visible;
+}
+
+.motion-cricket-stage.hand-virtual-stage .motion-cricket-feed {
+  position: relative !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 140px;
+  max-height: min(38vh, 320px);
+  opacity: 1 !important;
+  pointer-events: none;
+  object-fit: cover;
+  display: block;
+  border-radius: 12px 12px 0 0;
+}
+
+.motion-cricket-stage.hand-virtual-stage .motion-cricket-canvas {
+  border-radius: 0 0 12px 12px;
+}
+
+/* Motion basketball: stage wrapper */
+.basketball-wrapper {
+  margin: 0.75rem auto 0;
+  max-width: 720px;
+}
+
 .motion-cricket-feed {
   position: absolute;
   width: 1px;

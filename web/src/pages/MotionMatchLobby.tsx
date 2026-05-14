@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import QrMatchScanner from "../components/QrMatchScanner";
 
 type Role = "laptop" | "phone";
+type MotionGame = "cricket" | "basketball";
 
 function makeMatchId(): string {
   const raw =
@@ -12,8 +13,19 @@ function makeMatchId(): string {
   return raw.slice(0, 8).toUpperCase();
 }
 
+function stadiumPath(game: MotionGame, matchId: string): string {
+  return game === "cricket"
+    ? `/games/motion?match=${encodeURIComponent(matchId)}`
+    : `/games/basketball?match=${encodeURIComponent(matchId)}`;
+}
+
+function batPath(matchId: string): string {
+  return `/games/bat?host=${encodeURIComponent(matchId)}`;
+}
+
 export default function MotionMatchLobby() {
   const navigate = useNavigate();
+  const [motionGame, setMotionGame] = useState<MotionGame>("cricket");
   const [joinId, setJoinId] = useState("");
   const [joinRole, setJoinRole] = useState<Role>("phone");
   const [createdMatchId, setCreatedMatchId] = useState<string | null>(null);
@@ -21,36 +33,36 @@ export default function MotionMatchLobby() {
   const [scanOpen, setScanOpen] = useState(false);
 
   const createdHostLink = useMemo(
-    () => (createdMatchId ? `/games/motion?match=${encodeURIComponent(createdMatchId)}` : ""),
-    [createdMatchId]
+    () => (createdMatchId ? stadiumPath(motionGame, createdMatchId) : ""),
+    [createdMatchId, motionGame]
   );
-  const createdBatLink = useMemo(
-    () => (createdMatchId ? `/games/bat?host=${encodeURIComponent(createdMatchId)}` : ""),
-    [createdMatchId]
+  const createdSecondLink = useMemo(
+    () => (createdMatchId ? (motionGame === "cricket" ? batPath(createdMatchId) : stadiumPath(motionGame, createdMatchId)) : ""),
+    [createdMatchId, motionGame]
   );
 
   const onQrDecoded = useCallback(
     (id: string) => {
       setJoinId(id);
       setScanOpen(false);
-      if (joinRole === "laptop") navigate(`/games/motion?match=${encodeURIComponent(id)}`);
-      else navigate(`/games/bat?host=${encodeURIComponent(id)}`);
+      if (joinRole === "laptop") navigate(stadiumPath(motionGame, id));
+      else navigate(motionGame === "cricket" ? batPath(id) : stadiumPath(motionGame, id));
     },
-    [joinRole, navigate]
+    [joinRole, motionGame, navigate]
   );
 
   function onCreate() {
     const id = makeMatchId();
     setCreatedMatchId(id);
-    if (createRole === "laptop") navigate(`/games/motion?match=${encodeURIComponent(id)}`);
-    else navigate(`/games/bat?host=${encodeURIComponent(id)}`);
+    if (createRole === "laptop") navigate(stadiumPath(motionGame, id));
+    else navigate(motionGame === "cricket" ? batPath(id) : stadiumPath(motionGame, id));
   }
 
   function onJoin() {
     const id = joinId.trim().toUpperCase();
     if (!id) return;
-    if (joinRole === "laptop") navigate(`/games/motion?match=${encodeURIComponent(id)}`);
-    else navigate(`/games/bat?host=${encodeURIComponent(id)}`);
+    if (joinRole === "laptop") navigate(stadiumPath(motionGame, id));
+    else navigate(motionGame === "cricket" ? batPath(id) : stadiumPath(motionGame, id));
   }
 
   return (
@@ -66,6 +78,28 @@ export default function MotionMatchLobby() {
       <div className="card">
         <h2>Start new match</h2>
         <p className="muted small">Creates a fresh Match ID and opens selected role immediately.</p>
+        <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginBottom: "0.5rem" }}>
+          <label>
+            <input
+              type="radio"
+              name="motionGame"
+              value="cricket"
+              checked={motionGame === "cricket"}
+              onChange={() => setMotionGame("cricket")}
+            />{" "}
+            Motion cricket
+          </label>
+          <label>
+            <input
+              type="radio"
+              name="motionGame"
+              value="basketball"
+              checked={motionGame === "basketball"}
+              onChange={() => setMotionGame("basketball")}
+            />{" "}
+            Motion basketball
+          </label>
+        </div>
         <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
           <label>
             <input
@@ -75,7 +109,7 @@ export default function MotionMatchLobby() {
               checked={createRole === "laptop"}
               onChange={() => setCreateRole("laptop")}
             />{" "}
-            Laptop (stadium)
+            Laptop (stadium / court)
           </label>
           <label>
             <input
@@ -85,7 +119,7 @@ export default function MotionMatchLobby() {
               checked={createRole === "phone"}
               onChange={() => setCreateRole("phone")}
             />{" "}
-            Phone (bat)
+            {motionGame === "cricket" ? "Phone (bat)" : "Phone (optional second screen)"}
           </label>
         </div>
         <p style={{ marginTop: "0.7rem" }}>
@@ -100,7 +134,18 @@ export default function MotionMatchLobby() {
             </p>
             <p className="muted small">Share this ID and join from any device.</p>
             <p className="muted small">
-              Quick links: <code>{createdHostLink}</code> / <code>{createdBatLink}</code>
+              Quick links: <code>{createdHostLink}</code>
+              {motionGame === "cricket" ? (
+                <>
+                  {" "}
+                  / <code>{createdSecondLink}</code>
+                </>
+              ) : (
+                <>
+                  {" "}
+                  (basketball uses the same court URL on a second device if you want a shared ID only.)
+                </>
+              )}
             </p>
           </>
         )}
@@ -111,6 +156,28 @@ export default function MotionMatchLobby() {
         <p className="muted small">
           Use the camera to scan the QR from the stadium screen (contains the Match ID), or type the ID below.
         </p>
+        <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginBottom: "0.5rem" }}>
+          <label>
+            <input
+              type="radio"
+              name="motionGameJoin"
+              value="cricket"
+              checked={motionGame === "cricket"}
+              onChange={() => setMotionGame("cricket")}
+            />{" "}
+            Motion cricket
+          </label>
+          <label>
+            <input
+              type="radio"
+              name="motionGameJoin"
+              value="basketball"
+              checked={motionGame === "basketball"}
+              onChange={() => setMotionGame("basketball")}
+            />{" "}
+            Motion basketball
+          </label>
+        </div>
         <p style={{ marginTop: "0.5rem" }}>
           <button type="button" className="btn primary" onClick={() => setScanOpen(true)}>
             Open camera &amp; scan QR
@@ -134,7 +201,7 @@ export default function MotionMatchLobby() {
               checked={joinRole === "laptop"}
               onChange={() => setJoinRole("laptop")}
             />{" "}
-            Laptop (stadium)
+            Laptop (stadium / court)
           </label>
           <label>
             <input
@@ -144,7 +211,7 @@ export default function MotionMatchLobby() {
               checked={joinRole === "phone"}
               onChange={() => setJoinRole("phone")}
             />{" "}
-            Phone (bat)
+            {motionGame === "cricket" ? "Phone (bat)" : "Phone (optional)"}
           </label>
         </div>
         <p style={{ marginTop: "0.7rem" }}>

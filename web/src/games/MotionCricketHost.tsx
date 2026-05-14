@@ -8,6 +8,7 @@ import "@tensorflow/tfjs-backend-webgl";
 import * as poseDetection from "@tensorflow-models/pose-detection";
 import { supabase } from "../supabaseClient";
 import { appendPreviousMatch } from "../lib/motionMatchHistory";
+import { requestBrioOrUserFacingWebcam } from "../lib/cameraStream";
 import {
   MAX_BALLS,
   MOTION_CRICKET_GAME_TYPE,
@@ -100,37 +101,6 @@ function distancePointToSegment(
   return Math.hypot(px - cx, py - cy);
 }
 
-type LegacyNavigator = Navigator & {
-  webkitGetUserMedia?: (
-    constraints: MediaStreamConstraints,
-    success: (stream: MediaStream) => void,
-    error: (err: unknown) => void
-  ) => void;
-  mozGetUserMedia?: (
-    constraints: MediaStreamConstraints,
-    success: (stream: MediaStream) => void,
-    error: (err: unknown) => void
-  ) => void;
-  msGetUserMedia?: (
-    constraints: MediaStreamConstraints,
-    success: (stream: MediaStream) => void,
-    error: (err: unknown) => void
-  ) => void;
-};
-
-async function requestCameraStream(constraints: MediaStreamConstraints): Promise<MediaStream> {
-  const nav = navigator as LegacyNavigator;
-  if (navigator.mediaDevices?.getUserMedia) return navigator.mediaDevices.getUserMedia(constraints);
-
-  const legacy = nav.webkitGetUserMedia ?? nav.mozGetUserMedia ?? nav.msGetUserMedia;
-  if (legacy) {
-    return new Promise<MediaStream>((resolve, reject) => {
-      legacy.call(nav, constraints, resolve, reject);
-    });
-  }
-  throw new Error("Camera API unavailable. Open stadium on http://localhost:5173 or use HTTPS.");
-}
-
 export default function MotionCricketHost({ session }: { session: Session | null }) {
   const [params] = useSearchParams();
   const matchFromQuery = params.get("match")?.trim().toUpperCase() ?? "";
@@ -185,6 +155,7 @@ export default function MotionCricketHost({ session }: { session: Session | null
   const [deliveryState, setDeliveryState] = useState<"idle" | "in_flight">("idle");
   const [submitMsg, setSubmitMsg] = useState<string | null>(null);
   const [submitErr, setSubmitErr] = useState<string | null>(null);
+  const [cameraLabel, setCameraLabel] = useState<string | null>(null);
 
   const [phoneOrigin, setPhoneOrigin] = useState(() => defaultPhoneOrigin());
   const [lanDiscovery, setLanDiscovery] = useState<"idle" | "scanning" | "ok" | "fallback">(() =>
@@ -421,8 +392,9 @@ export default function MotionCricketHost({ session }: { session: Session | null
       }
       await tf.ready();
 
-      const stream = await requestCameraStream({ video: { facingMode: "user" }, audio: false });
+      const { stream, label } = await requestBrioOrUserFacingWebcam();
       streamRef.current = stream;
+      setCameraLabel(label);
 
       const v = videoRef.current;
       if (v) {
@@ -958,6 +930,11 @@ export default function MotionCricketHost({ session }: { session: Session | null
       <p className="muted small">
         Match ID: <strong>{hostId}</strong>. Join from <Link to="/games/match">Match Lobby</Link> on both devices.
       </p>
+      {cameraLabel && phase !== "idle" && (
+        <p className="muted small">
+          Active camera: <strong>{cameraLabel}</strong> (Logitech BRIO is used automatically when listed by the browser).
+        </p>
+      )}
 
       <div className="card motion-cricket-pair">
           <h2 className="motion-cricket-pair-title">Phone as bat</h2>

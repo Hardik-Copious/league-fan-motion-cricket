@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import type { Session } from "@supabase/supabase-js";
 import PageBanner from "../components/PageBanner";
 import { MOTION_CRICKET_GAME_TYPE } from "../games/motionCricket";
+import { MOTION_BASKETBALL_GAME_TYPE, MOTION_BASKETBALL_TARGET_RUSH_GAME_TYPE } from "../games/motionBasketball";
 import { loadPreviousMatches, type PreviousMotionMatch } from "../lib/motionMatchHistory";
 import { supabase } from "../supabaseClient";
 
@@ -40,13 +41,21 @@ async function loadLeaderboard(gameType: string): Promise<Row[]> {
 
 export default function Games({ session: _session }: { session: Session | null }) {
   const [motionRows, setMotionRows] = useState<Row[]>([]);
+  const [basketballRows, setBasketballRows] = useState<Row[]>([]);
+  const [targetRushRows, setTargetRushRows] = useState<Row[]>([]);
   const [previous, setPrevious] = useState<PreviousMotionMatch[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   async function load() {
     try {
-      const m = await loadLeaderboard(MOTION_CRICKET_GAME_TYPE);
+      const [m, bb, tr] = await Promise.all([
+        loadLeaderboard(MOTION_CRICKET_GAME_TYPE),
+        loadLeaderboard(MOTION_BASKETBALL_GAME_TYPE),
+        loadLeaderboard(MOTION_BASKETBALL_TARGET_RUSH_GAME_TYPE),
+      ]);
       setMotionRows(m);
+      setBasketballRows(bb);
+      setTargetRushRows(tr);
       setPrevious(loadPreviousMatches());
       setError(null);
     } catch (e) {
@@ -63,9 +72,9 @@ export default function Games({ session: _session }: { session: Session | null }
       <PageBanner variant="games" />
       <h1>Games</h1>
       <p className="muted">
-        Motion cricket uses your <strong>laptop webcam</strong> (pose) and <strong>phone sensors</strong> (swing) via
-        Supabase Realtime. Only scores you save are stored in Supabase. Use <strong>HTTPS</strong> or{" "}
-        <code>localhost</code> for camera and sensors.
+        Motion games use your <strong>device camera</strong> (pose via TensorFlow.js MoveNet). Cricket can pair with a
+        phone for swing events over Supabase Realtime. Only scores you save are stored in Supabase. Use{" "}
+        <strong>HTTPS</strong> or <code>localhost</code> for camera and sensors.
       </p>
 
       <div className="card card-textured">
@@ -79,6 +88,43 @@ export default function Games({ session: _session }: { session: Session | null }
             Start or Join Match
           </Link>
           <span className="muted">Lobby supports typing the Match ID or scanning a QR with the camera.</span>
+        </div>
+      </div>
+
+      <div className="card card-textured" style={{ marginTop: "1rem" }}>
+        <h2>Motion basketball (pose analytics)</h2>
+        <p className="muted">
+          Same camera model as motion cricket: front webcam, mirrored skeleton on a half-court canvas. Tracks{" "}
+          <strong>floor zones</strong>, <strong>shot-motion peaks</strong>, <strong>squat cycles</strong>, and{" "}
+          <strong>defensive stance</strong> segments for a timed drill.
+        </p>
+        <div className="games-actions">
+          <Link to="/games/basketball" className="btn primary">
+            Basketball games
+          </Link>
+          <span className="muted">Hub for analytics court, Target rush, and motion demos.</span>
+        </div>
+      </div>
+
+      <div className="card card-textured" style={{ marginTop: "1rem" }}>
+        <h2>Motion demos (webcam)</h2>
+        <p className="muted small">
+          <strong>Night heat</strong> is an NFS-inspired street sprint (nitro, drafting, rain, pseudo-3D).{" "}
+          <strong>Motion Grand Prix</strong> is the cleaner timed circuit. Both use the same TensorFlow.js MoveNet stack as basketball.
+        </p>
+        <div className="games-actions">
+          <Link to="/games/night-heat" className="btn primary">
+            Night heat (NFS-style)
+          </Link>
+          <Link to="/games/motion-steering-race" className="btn">
+            Motion Grand Prix (race)
+          </Link>
+          <Link to="/games/motion-steering" className="btn">
+            Steering demo
+          </Link>
+          <Link to="/games/hand-virtual-input" className="btn">
+            Hand keyboard
+          </Link>
         </div>
       </div>
 
@@ -96,11 +142,37 @@ export default function Games({ session: _session }: { session: Session | null }
 
       <h2 style={{ marginTop: "1.5rem" }}>Leaderboard — motion cricket</h2>
       {error && <p className="error">{error}</p>}
-      {motionRows.length === 0 && <p className="muted">No motion scores yet.</p>}
+      {motionRows.length === 0 && <p className="muted">No motion cricket scores yet.</p>}
       {motionRows.map((r, i) => (
         <div key={r.id} className="card">
           <strong>
             #{i + 1} — {r.score} runs
+          </strong>{" "}
+          <span className="muted">
+            · {r.display_name ?? "Player"} · {new Date(r.created_at).toLocaleString()}
+          </span>
+        </div>
+      ))}
+
+      <h2 style={{ marginTop: "1.5rem" }}>Leaderboard — motion basketball (analytics)</h2>
+      {basketballRows.length === 0 && <p className="muted">No motion basketball scores yet.</p>}
+      {basketballRows.map((r, i) => (
+        <div key={r.id} className="card">
+          <strong>
+            #{i + 1} — {r.score} pts
+          </strong>{" "}
+          <span className="muted">
+            · {r.display_name ?? "Player"} · {new Date(r.created_at).toLocaleString()}
+          </span>
+        </div>
+      ))}
+
+      <h2 style={{ marginTop: "1.5rem" }}>Leaderboard — Target rush (wins)</h2>
+      {targetRushRows.length === 0 && <p className="muted">No Target rush scores yet.</p>}
+      {targetRushRows.map((r, i) => (
+        <div key={r.id} className="card">
+          <strong>
+            #{i + 1} — {r.score} pts
           </strong>{" "}
           <span className="muted">
             · {r.display_name ?? "Player"} · {new Date(r.created_at).toLocaleString()}
